@@ -24,9 +24,10 @@ public class MusicPlayerActivity extends AppCompatActivity {
 
     public static final String Broadcast_PLAY_NEW_AUDIO = "com.example.myapplication.PlayNewAudio";
     private ImageButton playButton,pauseButton,skipToNextButton,skipToPreviousButton,stopButton,Repeat,shuffle;
-    private TextView songTitleTextView,textCurrentTime,textTotalDuration,artistTextView;
+    private TextView songTitleTextView,textCurrentTime,textTotalDurationn,artistTextView;
     protected SeekBar playerSeekBar;
-    private long TotalDur;
+    private boolean isBound = false;
+    private int TotalDur;
     private MusicService.PlayerServiceBinder playerServiceBinder;
     private MusicService musicService;
     private MediaControllerCompat mediaController;
@@ -50,7 +51,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
         artistTextView = findViewById(R.id.artist_text_view);
         Repeat = findViewById(R.id.repeat);
         textCurrentTime = findViewById(R.id.textCurrentTime);
-        textTotalDuration = findViewById(R.id.textTotalDuration);
+        textTotalDurationn = findViewById(R.id.textTotalDurationn);
         shuffle = findViewById(R.id.shuffle);
         playerSeekBar = findViewById(R.id.seek_bar);
 
@@ -75,9 +76,12 @@ public class MusicPlayerActivity extends AppCompatActivity {
             public void onServiceConnected(ComponentName name, IBinder service) {
                 playerServiceBinder = (MusicService.PlayerServiceBinder) service;
                 musicService = playerServiceBinder.getService();
+                isBound=true;
                 mediaController = new MediaControllerCompat(MusicPlayerActivity.this, playerServiceBinder.getMediaSessionToken());
                 mediaController.registerCallback(callback);
                 callback.onPlaybackStateChanged(mediaController.getPlaybackState());
+                // Вызов методов MusicService, которые нужны в активити
+                musicService.setActivity(MusicPlayerActivity.this);
                 //new Intent(MusicPlayerActivity.this, MusicService.class).putExtra("idmusic", 1);
                 startService( new Intent(MusicPlayerActivity.this, MusicService.class).putExtra("idmusic", idMusic));
             }
@@ -85,6 +89,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
             @Override
             public void onServiceDisconnected(ComponentName name) {
                 playerServiceBinder = null;
+                isBound = false;
                 if (mediaController != null) {
                     mediaController.unregisterCallback(callback);
                     mediaController = null;
@@ -371,42 +376,61 @@ public class MusicPlayerActivity extends AppCompatActivity {
         @Override
         public void run() {
             updateSeekBar();
-            long currentDuration = playerServiceBinder.GetCurrentPosition();
+            int currentDuration = playerServiceBinder.GetCurrentPosition();
             textCurrentTime.setText(musicRepository.ConvertingTime(currentDuration));
         }
     };
 
-    public void updateSeekBar()
-    {
-        if(isPlaying)//playerServiceBinder.GetisPlayerPlayer()
-        {
-            Runnable updateseekbar=new Runnable() {
+    public void updateSeekBar() {
+        if (isPlaying && playerServiceBinder != null) {
+            Runnable updateseekbar = new Runnable() {
                 @Override
                 public void run() {
-                    playerSeekBar.setProgress((int) (((float)playerServiceBinder.GetCurrentPosition() / TotalDur) * 100));
-                    handler.postDelayed(updater,1000);
+                    int currentPosition = playerServiceBinder.GetCurrentPosition();
+                    if (currentPosition > 0) { // Проверяем, что позиция корректна
+                        int progress = (int) (((float) currentPosition / TotalDur) * 100);
+                        playerSeekBar.setProgress(progress);
+                    }
+                    handler.postDelayed(updater, 1000);
                 }
             };
-            Thread thread=new Thread(updateseekbar);
+            Thread thread = new Thread(updateseekbar);
             thread.start();
-          /*  Toast message = Toast.makeText(MusicPlayerActivity.this,String.valueOf((int) (((float) playerServiceBinder.GetCurrentPosition() / TotalDur) * 100)), Toast.LENGTH_SHORT);
-            message.show();*/
         }
     }
-    protected void updateTextTimeandSeek(String TotalDuration,long lTotalDuration) {//Boolean CheckisPlaying
-        if (mediaController != null) {
-           /* textTotalDuration.post(new Runnable() {
+    public void up(String TotalDuration,int lTotalDuration)
+    {
+        if (textTotalDurationn != null) {
+            // Обновление текстовых полей
+            textTotalDurationn.setText(TotalDuration);
+            Toast.makeText(this,"dsadsadsa",Toast.LENGTH_SHORT).show();
+        }
+        TotalDur=lTotalDuration;
+    }
+    public void updateTextTimeandSeek(String TotalDuration,long lTotalDuration) {//Boolean CheckisPlaying
+    /*    if (mediaController != null) {
+           *//* textTotalDuration.post(new Runnable() {
                 @Override
                 public void run() {
                     textTotalDuration.setText(TotalDuration);
                 }
-            });*/
-            textTotalDuration.setText(TotalDuration);
-            TotalDur=lTotalDuration;
-            Toast.makeText(this,TotalDuration,Toast.LENGTH_SHORT).show();
+            });*//*
+
             //seekBar.setMax(currentSong.getDuration());
             //seekBar.setProgress(musicService.getCurrentSongIndex());
-        }
+        }*/
+        if(mediaController==null)
+            Toast.makeText(this,"Fddsf",Toast.LENGTH_SHORT).show();
+        //textTotalDuration.setText(TotalDuration);
+        //TotalDur=lTotalDuration;
+       /* runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // обновляем элементы пользовательского интерфейса
+                textTotalDuration.setText(TotalDuration);
+                TotalDur=lTotalDuration;
+            }
+        });*/
     }
 
     @Override
@@ -417,6 +441,10 @@ public class MusicPlayerActivity extends AppCompatActivity {
             mediaController.unregisterCallback(callback);
             mediaController = null;
         }
-        unbindService(serviceConnection);
+        if(isBound){
+            unbindService(serviceConnection);
+            isBound = false;
+        }
+
     }
 }

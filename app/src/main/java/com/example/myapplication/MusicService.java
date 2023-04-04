@@ -50,6 +50,12 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private MediaPlayer player;
     private ArrayList<MusicRepository.Song> songs;
     private MusicRepository.Song song;
+
+    // Binder для связи с активити
+    private IBinder binder = new PlayerServiceBinder();
+    // Ссылка на активити
+    private MusicPlayerActivity activity;
+
     private RandomMusic randomMusic;
     private int currentSongIndex=0;
     private NotificationManager notificationManager;
@@ -77,7 +83,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private AudioFocusRequest audioFocusRequest;
     private boolean audioFocusRequested = false,isShuffle,isRepeat;
 
-    private long duration;
+    private int duration;
     private String StringDuration;
     private MusicRepository.Song track;
 
@@ -172,6 +178,10 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         IdMusic = intent.getIntExtra("idmusic", 0);
         musicRepository.setIdUserMusic(IdMusic);
         return super.onStartCommand(intent, flags, startId);
+    }
+    // Метод для установки ссылки на активити
+    public void setActivity(MusicPlayerActivity activity) {
+        this.activity = activity;
     }
 
     @Override
@@ -376,7 +386,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return new MusicService.PlayerServiceBinder();
+        //return new MusicService.PlayerServiceBinder();
+        return binder;
     }
 
     @Override
@@ -429,11 +440,14 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             musicPlayerActivity.isPlaying=true;
             musicPlayerActivity.updateUI();
         }
+        if (activity != null) {
+            /*int duration = mediaPlayer.getDuration();
+            String StringDuration = createTimeLabel(duration);          */
+            activity.up(StringDuration,duration);
+        }
         musicPlayerActivity.isPlaying=true;
-        musicPlayerActivity.updateTextTimeandSeek(StringDuration,duration);
-        Log.d(TAG, StringDuration);
-        //Log.d(TAG, "onPrepared");
         playMedia();
+
         musicPlayerActivity.updateSeekBar();
         Log.d(TAG, "onPrepared");
     }

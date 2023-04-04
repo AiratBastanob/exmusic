@@ -38,7 +38,7 @@ public class MusicRepository {
     {
         currentItemIndex = IdUserMusic;
     }
-    String ConvertingTime(long milliSeconds) {
+    String ConvertingTime(int milliSeconds) {
         timestring = "";
         int hours = (int) (milliSeconds / (1000 * 60 * 60));
         int minutes = (int) (milliSeconds % (1000 * 60 * 60)) / (1000 * 60);

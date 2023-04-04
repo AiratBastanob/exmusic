@@ -93,14 +93,15 @@
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
             android:src="@drawable/ic_shuffle" />
+
         <TextView
-            android:id="@+id/textTotalDuration"
+            android:id="@+id/textTotalDurationn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/zero"
             android:textColor="#212121"
             android:textSize="18sp"
-            android:textStyle="bold"/>
+            android:textStyle="bold" />
     </LinearLayout>
     <ImageButton
         android:id="@+id/stop"
