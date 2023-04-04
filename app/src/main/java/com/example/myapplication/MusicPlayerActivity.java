@@ -7,83 +7,346 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.Random;
 
 public class MusicPlayerActivity extends AppCompatActivity {
 
     public static final String Broadcast_PLAY_NEW_AUDIO = "com.example.myapplication.PlayNewAudio";
-    private ImageButton playButton;
-    private ImageButton pauseButton;
-    private TextView songTitleTextView;
-    private TextView artistTextView;
-    private SeekBar seekBar;
-
-    private boolean isPlaying = false;
+    private ImageButton playButton,pauseButton,skipToNextButton,skipToPreviousButton,stopButton,Repeat,shuffle;
+    private TextView songTitleTextView,textCurrentTime,textTotalDuration,artistTextView;
+    protected SeekBar playerSeekBar;
+    private long TotalDur;
+    private MusicService.PlayerServiceBinder playerServiceBinder;
     private MusicService musicService;
-    private ServiceConnection serviceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            MusicService.LocalBinder musicBinder = (MusicService.LocalBinder) iBinder;
-            musicService = musicBinder.getService();
-            updateUI();
-        }
+    private MediaControllerCompat mediaController;
+    private MediaControllerCompat.Callback callback;
+    private ServiceConnection serviceConnection;
+    private Integer idMusic=1,RandomIdMusic;
+    private final MusicRepository musicRepository = new MusicRepository();
+    private Handler handler = new Handler();
 
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            musicService = null;
-        }
-    };
-
+    boolean isPlaying = false,isRepeat=false,isShuffle=false,check=true;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         playButton = findViewById(R.id.play_button);
         pauseButton = findViewById(R.id.pause_button);
-        songTitleTextView = findViewById(R.id.song_title_text_view);
+        stopButton = findViewById(R.id.stop);
+        skipToNextButton = findViewById(R.id.skip_to_next);
+        skipToNextButton = findViewById(R.id.skip_to_next);
+        skipToPreviousButton = findViewById(R.id.skip_to_previous);
         artistTextView = findViewById(R.id.artist_text_view);
-        seekBar = findViewById(R.id.seek_bar);
+        Repeat = findViewById(R.id.repeat);
+        textCurrentTime = findViewById(R.id.textCurrentTime);
+        textTotalDuration = findViewById(R.id.textTotalDuration);
+        shuffle = findViewById(R.id.shuffle);
+        playerSeekBar = findViewById(R.id.seek_bar);
 
-        // Bind to the MusicService
-        Intent intent = new Intent(this, MusicService.class);
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        //playerSeekBar.setMax(100);
 
-        // Set the click listeners for the buttons
+        musicService=new MusicService();
+
+        callback = new MediaControllerCompat.Callback() {
+            @Override
+            public void onPlaybackStateChanged(PlaybackStateCompat state) {
+                if (state == null)
+                    return;
+                boolean playing = state.getState() == PlaybackStateCompat.STATE_PLAYING;
+                playButton.setEnabled(!playing);
+                pauseButton.setEnabled(playing);
+                stopButton.setEnabled(playing);
+            }
+        };
+
+        serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                playerServiceBinder = (MusicService.PlayerServiceBinder) service;
+                musicService = playerServiceBinder.getService();
+                mediaController = new MediaControllerCompat(MusicPlayerActivity.this, playerServiceBinder.getMediaSessionToken());
+                mediaController.registerCallback(callback);
+                callback.onPlaybackStateChanged(mediaController.getPlaybackState());
+                //new Intent(MusicPlayerActivity.this, MusicService.class).putExtra("idmusic", 1);
+                startService( new Intent(MusicPlayerActivity.this, MusicService.class).putExtra("idmusic", idMusic));
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                playerServiceBinder = null;
+                if (mediaController != null) {
+                    mediaController.unregisterCallback(callback);
+                    mediaController = null;
+                }
+            }
+        };
+
+        bindService(new Intent(this, MusicService.class), serviceConnection, BIND_AUTO_CREATE);
+
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                if (musicService != null) {
-                    musicService.togglePlayPause();
+            public void onClick(View v) {
+                if (mediaController != null)
+                {
+                    mediaController.getTransportControls().play();
                     isPlaying = true;
+                    //updateUI(isPlaying);
                     updateUI();
+                    updateSeekBar();
                 }
             }
         });
 
         pauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                if (musicService != null) {
-                    musicService.togglePlayPause();
+            public void onClick(View v) {
+                if (mediaController != null)
+                {
+                    mediaController.getTransportControls().pause();
                     isPlaying = false;
+                    //updateUI(isPlaying);
+                    handler.removeCallbacks(updater);
                     updateUI();
                 }
             }
         });
+
+        stopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mediaController != null)
+                {
+                    mediaController.getTransportControls().stop();
+                    isPlaying = false;
+                    //updateUI(isPlaying);
+                    updateUI();
+                }
+            }
+        });
+
+        skipToNextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mediaController != null)
+                    mediaController.getTransportControls().skipToNext();
+            }
+        });
+
+        skipToPreviousButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mediaController != null)
+                    mediaController.getTransportControls().skipToPrevious();
+            }
+        });
+
+        playerSeekBar.setOnTouchListener(new View.OnTouchListener()
+        {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent)
+            {
+                Runnable playerseekbar=new Runnable() {
+                    @Override
+                    public void run() {
+                        SeekBar seekBar=(SeekBar) view;
+                        int PlayerPosition=playerServiceBinder.GetDurationPlayer();
+                        int playPosition = PlayerPosition * seekBar.getProgress();
+                        playerServiceBinder.SetPositionPlayer(playPosition);
+                        /*textCurrentTime.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                textCurrentTime.setText(millisecondstotimer(mediaPlayer.getCurrentPosition()));
+                            }
+                        });*/
+                        textCurrentTime.setText(musicRepository.ConvertingTime(playerServiceBinder.GetCurrentPosition()));
+                    }
+                };
+                Thread thread=new Thread(playerseekbar);
+                thread.start();
+                return false;
+            }
+        });
+
+        shuffle.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                Toast message1=Toast.makeText(MusicPlayerActivity.this,"зашел",Toast.LENGTH_SHORT);
+                message1.show();
+                if(isRepeat)
+                {
+                    Toast message2=Toast.makeText(MusicPlayerActivity.this,"Cannot_select_random_music_repeat_on",Toast.LENGTH_SHORT);
+                    message2.show();
+                }
+                else
+                {
+                    check=true;
+                    if (isShuffle)
+                    {
+                        isShuffle=false;
+                        shuffle.setImageResource(R.drawable.ic_shuffle);
+                        //musicService.SetShuffle(isShuffle);
+                        playerServiceBinder.SetShuffle(isShuffle);
+                    }
+                    else
+                    {
+                        isShuffle=true;
+                        shuffle.setImageResource(R.drawable.ic_shuffle_selected);
+                        //musicService.SetShuffle(isShuffle);
+                        playerServiceBinder.SetShuffle(isShuffle);
+                        Toast message3=Toast.makeText(MusicPlayerActivity.this,"зашел2",Toast.LENGTH_SHORT);
+                        message3.show();
+                    }
+                }
+          /*      Runnable Shuffle=new Runnable() {
+                    @Override
+                    public void run() {
+                        if(isRepeat)
+                        {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast message=Toast.makeText(MusicPlayerActivity.this,"Cannot_select_random_music_repeat_on",Toast.LENGTH_SHORT);
+                                    message.show();
+                                }
+                            });
+                        }
+                        else
+                        {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast message=Toast.makeText(MusicPlayerActivity.this,"зашел2",Toast.LENGTH_SHORT);
+                                    message.show();
+                                }
+                            });
+                            check=true;
+                            Random r = new Random();
+                            if (isShuffle)
+                            {
+                                isShuffle=false;
+                                shuffle.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        shuffle.setBackgroundResource(R.drawable.ic_shuffle);
+                                    }
+                                });
+                                musicService.SetShuffle(isShuffle);
+                            }
+                            else
+                            {
+                                isShuffle=true;
+                             *//*   while (check)
+                                {
+                                    RandomIdMusic = r.nextInt(26 - 1) + 1;
+                                    if(RandomIdMusic.equals(idMusic) || RandomIdMusic>=26)
+                                    {
+
+                                    }
+                                    else
+                                    {
+                                        check=false;
+                                        idMusic=RandomIdMusic;
+                                        shuffle.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                shuffle.setBackgroundResource(R.drawable.ic_shuffle_selected);
+                                            }
+                                        });
+                                    }
+                                }*//*
+                                shuffle.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        shuffle.setBackgroundResource(R.drawable.ic_shuffle_selected);
+                                    }
+                                });
+                                musicService.SetShuffle(isShuffle);
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast message=Toast.makeText(MusicPlayerActivity.this,"зашел2",Toast.LENGTH_SHORT);
+                                        message.show();
+                                    }
+                                });
+                            }
+                        }
+                    }
+                };
+                Thread thread=new Thread(Shuffle);
+                thread.start();*/
+            }
+        });
+
+        Repeat.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                Runnable repeat=new Runnable() {
+                    @Override
+                    public void run() {
+                        if(isShuffle)
+                        {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast message=Toast.makeText(MusicPlayerActivity.this,"You_cant_turn_repeat_shuffle_music_on",Toast.LENGTH_SHORT);
+                                    message.show();
+                                }
+                            });
+                        }
+                        else
+                        {
+                            if(isRepeat)//mediaPlayer.isLooping()musicService.GetisRepeat()
+                            {
+                                isRepeat=false;
+                                //musicService.SetRepeat(isRepeat);
+                                playerServiceBinder.SetRepeat(isRepeat);
+                                //mediaPlayer.setLooping(false);
+                                Repeat.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Repeat.setImageResource(R.drawable.ic_repeat);
+                                    }
+                                });
+                            }
+                            else
+                            {
+                                isRepeat=true;
+                                playerServiceBinder.SetRepeat(isRepeat);
+                                //musicService.SetRepeat(isRepeat);
+                                //mediaPlayer.setLooping(true);
+                                Repeat.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Repeat.setImageResource(R.drawable.ic_repeat_selected);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                };
+                Thread thread=new Thread(repeat);
+                thread.start();
+            }
+        });
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        unbindService(serviceConnection);
-    }
-
-    private void updateUI() {
-        if (musicService != null) {
+    protected void updateUI() {//Boolean CheckisPlaying
+        if (mediaController != null) {
         /*    Song currentSong = musicService.getCurrentSong();
             if (currentSong != null) {
                 songTitleTextView.setText(currentSong.getTitle());
@@ -101,5 +364,59 @@ public class MusicPlayerActivity extends AppCompatActivity {
                 pauseButton.setVisibility(View.GONE);
             }
         }
+    }
+
+    public Runnable updater = new Runnable()
+    {
+        @Override
+        public void run() {
+            updateSeekBar();
+            long currentDuration = playerServiceBinder.GetCurrentPosition();
+            textCurrentTime.setText(musicRepository.ConvertingTime(currentDuration));
+        }
+    };
+
+    public void updateSeekBar()
+    {
+        if(isPlaying)//playerServiceBinder.GetisPlayerPlayer()
+        {
+            Runnable updateseekbar=new Runnable() {
+                @Override
+                public void run() {
+                    playerSeekBar.setProgress((int) (((float)playerServiceBinder.GetCurrentPosition() / TotalDur) * 100));
+                    handler.postDelayed(updater,1000);
+                }
+            };
+            Thread thread=new Thread(updateseekbar);
+            thread.start();
+          /*  Toast message = Toast.makeText(MusicPlayerActivity.this,String.valueOf((int) (((float) playerServiceBinder.GetCurrentPosition() / TotalDur) * 100)), Toast.LENGTH_SHORT);
+            message.show();*/
+        }
+    }
+    protected void updateTextTimeandSeek(String TotalDuration,long lTotalDuration) {//Boolean CheckisPlaying
+        if (mediaController != null) {
+           /* textTotalDuration.post(new Runnable() {
+                @Override
+                public void run() {
+                    textTotalDuration.setText(TotalDuration);
+                }
+            });*/
+            textTotalDuration.setText(TotalDuration);
+            TotalDur=lTotalDuration;
+            Toast.makeText(this,TotalDuration,Toast.LENGTH_SHORT).show();
+            //seekBar.setMax(currentSong.getDuration());
+            //seekBar.setProgress(musicService.getCurrentSongIndex());
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        playerServiceBinder = null;
+        if (mediaController != null) {
+            mediaController.unregisterCallback(callback);
+            mediaController = null;
+        }
+        unbindService(serviceConnection);
     }
 }

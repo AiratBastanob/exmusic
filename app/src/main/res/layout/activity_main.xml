@@ -46,6 +46,26 @@
         android:layout_below="@id/seek_bar"
         android:gravity="center"
         android:orientation="horizontal">
+        <TextView
+            android:id="@+id/textCurrentTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/zero"
+            android:textColor="#212121"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+        <ImageButton
+            android:id="@+id/repeat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_repeat" />
+        <ImageButton
+            android:id="@+id/skip_to_previous"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_previous" />
 
         <ImageButton
             android:id="@+id/play_button"
@@ -61,6 +81,33 @@
             android:background="@android:color/transparent"
             android:src="@drawable/ic_pause"
             android:visibility="gone" />
-
+        <ImageButton
+            android:id="@+id/skip_to_next"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_next" />
+        <ImageButton
+            android:id="@+id/shuffle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_shuffle" />
+        <TextView
+            android:id="@+id/textTotalDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/zero"
+            android:textColor="#212121"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
     </LinearLayout>
+    <ImageButton
+        android:id="@+id/stop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_stop"
+        android:layout_below="@id/buttons_layout"
+        android:layout_centerHorizontal="true"/>
 </RelativeLayout>
