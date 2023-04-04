@@ -347,11 +347,10 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         return false;
     }
     private void resumeMedia() {
-        if (!mediaPlayer.isPlaying()) {
-            MusicPlayerActivity musicPlayerActivity=new MusicPlayerActivity();
+        if (!mediaPlayer.isPlaying() && activity!=null) {
             mediaPlayer.seekTo(resumePosition);
             mediaPlayer.start();
-            musicPlayerActivity.updateSeekBar();
+            activity.updateSeekBar();
         }
     }
 
@@ -397,36 +396,41 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         isShuffle=new  StorageSettingPlayer(getApplicationContext()).loadAudio("Shuffle");
         isRepeat=new  StorageSettingPlayer(getApplicationContext()).loadAudio("Repeat");
         checkPause=false;
-        Log.d(TAG, String.valueOf(mediaPlayer.isPlaying()));
         //Invoked when playback of a media source has completed.
-        if(isShuffle)
-        {
-            currentStateCopy = PlaybackStateCompat.STATE_STOPPED;
-            refreshNotificationAndForegroundStatus(currentStateCopy);
-            IdMusic=randomMusic.SetRandomId(IdMusic);
-            stopMedia();
-            musicRepository.setIdUserMusic(IdMusic);
-            MusicPlayerActivity musicPlayerActivity=new MusicPlayerActivity();
-            musicPlayerActivity.isPlaying=false;
-            musicPlayerActivity.updateUI();
-            mediaSessionCallback.onPlay();
+        if (activity != null) {
+            Log.d(TAG,"ЗЗЗЗЗЗАААААШШШШШШШЕЕЕЕЕЕЕЕЕЕЛЛЛЛЛЛ");
+            if(isShuffle)
+            {
+                stopMedia();
+                currentStateCopy = PlaybackStateCompat.STATE_STOPPED;
+                refreshNotificationAndForegroundStatus(currentStateCopy);
+                activity.playerSeekBar.setProgress(0);
+                IdMusic=randomMusic.SetRandomId(IdMusic);
+                musicRepository.setIdUserMusic(IdMusic);
+                activity.isPlaying=false;
+                activity.updateUI();
+                mediaSessionCallback.onPlay();
+                Log.d(TAG,"ЗЗЗЗЗЗАААААШШШШШШШЕЕЕЕЕЕЕЕЕЕЛЛЛЛЛЛ2222222222222222222222222");
+            }
+            else if(isRepeat)
+            {
+                mediaPlayer.setLooping(true);
+                Log.d(TAG,"ЗЗЗЗЗЗАААААШШШШШШШЕЕЕЕЕЕЕЕЕЕЛЛЛЛЛЛ33333333333333");
+            }
+            else
+            {
+                stopMedia();
+                currentStateCopy = PlaybackStateCompat.STATE_STOPPED;
+                refreshNotificationAndForegroundStatus(currentStateCopy);
+                activity.playerSeekBar.setProgress(0);
+                activity.textTotalDuration.setText(R.string.zero);
+                activity.handler.removeCallbacks(activity.updater);//надо подумать
+                activity.textCurrentTime.setText(R.string.zero);
+                activity.isPlaying=false;
+                activity.updateUI();
+                Log.d(TAG,"ЗЗЗЗЗЗАААААШШШШШШШЕЕЕЕЕЕЕЕЕЕЛЛЛЛЛЛ444444444444444444444");
+            }
         }
-        else if(isRepeat)
-        {
-            mediaPlayer.setLooping(true);
-        }
-        else
-        {
-            stopMedia();
-            currentStateCopy = PlaybackStateCompat.STATE_PAUSED;
-            refreshNotificationAndForegroundStatus(currentStateCopy);
-            MusicPlayerActivity musicPlayerActivity=new MusicPlayerActivity();
-            musicPlayerActivity.playerSeekBar.setProgress(0);
-            musicPlayerActivity.isPlaying=false;
-            musicPlayerActivity.updateUI();
-
-        }
-
         /*stopMedia();
         mediaPlayer.reset();*/
         //mediaSessionCallback.onSkipToNext();
@@ -434,22 +438,18 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     }
     @Override
     public void onPrepared(MediaPlayer mp) {
-        MusicPlayerActivity musicPlayerActivity=new MusicPlayerActivity();
-        if(isShuffle)
-        {
-            musicPlayerActivity.isPlaying=true;
-            musicPlayerActivity.updateUI();
-        }
         if (activity != null) {
-            /*int duration = mediaPlayer.getDuration();
-            String StringDuration = createTimeLabel(duration);          */
-            activity.up(StringDuration,duration);
+            if(isShuffle)
+            {
+                activity.isPlaying=true;
+                activity.updateUI();
+            }
+            activity.updateTextView(StringDuration,duration);
+            activity.isPlaying=true;
+            playMedia();
+            activity.updateSeekBar();
+            Log.d(TAG, "onPrepared");
         }
-        musicPlayerActivity.isPlaying=true;
-        playMedia();
-
-        musicPlayerActivity.updateSeekBar();
-        Log.d(TAG, "onPrepared");
     }
 
     private void playMedia()

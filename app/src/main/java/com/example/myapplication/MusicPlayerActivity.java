@@ -24,7 +24,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
 
     public static final String Broadcast_PLAY_NEW_AUDIO = "com.example.myapplication.PlayNewAudio";
     private ImageButton playButton,pauseButton,skipToNextButton,skipToPreviousButton,stopButton,Repeat,shuffle;
-    private TextView songTitleTextView,textCurrentTime,textTotalDurationn,artistTextView;
+    protected TextView songTitleTextView,textCurrentTime,textTotalDuration,artistTextView;
     protected SeekBar playerSeekBar;
     private boolean isBound = false;
     private int TotalDur;
@@ -35,7 +35,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
     private ServiceConnection serviceConnection;
     private Integer idMusic=1,RandomIdMusic;
     private final MusicRepository musicRepository = new MusicRepository();
-    private Handler handler = new Handler();
+    protected Handler handler = new Handler();
 
     boolean isPlaying = false,isRepeat=false,isShuffle=false,check=true;
     @Override
@@ -51,7 +51,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
         artistTextView = findViewById(R.id.artist_text_view);
         Repeat = findViewById(R.id.repeat);
         textCurrentTime = findViewById(R.id.textCurrentTime);
-        textTotalDurationn = findViewById(R.id.textTotalDurationn);
+        textTotalDuration = findViewById(R.id.textTotalDuration);
         shuffle = findViewById(R.id.shuffle);
         playerSeekBar = findViewById(R.id.seek_bar);
 
@@ -168,13 +168,13 @@ public class MusicPlayerActivity extends AppCompatActivity {
                         int PlayerPosition=playerServiceBinder.GetDurationPlayer();
                         int playPosition = PlayerPosition * seekBar.getProgress();
                         playerServiceBinder.SetPositionPlayer(playPosition);
-                        /*textCurrentTime.post(new Runnable() {
+                     /*   textCurrentTime.post(new Runnable() {
                             @Override
                             public void run() {
-                                textCurrentTime.setText(millisecondstotimer(mediaPlayer.getCurrentPosition()));
+                                textCurrentTime.setText(musicRepository.ConvertingTime(playerServiceBinder.GetCurrentPosition()));
                             }
                         });*/
-                        textCurrentTime.setText(musicRepository.ConvertingTime(playerServiceBinder.GetCurrentPosition()));
+                        //textCurrentTime.setText(musicRepository.ConvertingTime(playerServiceBinder.GetCurrentPosition()));
                     }
                 };
                 Thread thread=new Thread(playerseekbar);
@@ -398,41 +398,15 @@ public class MusicPlayerActivity extends AppCompatActivity {
             thread.start();
         }
     }
-    public void up(String TotalDuration,int lTotalDuration)
+    public void updateTextView(String TotalDuration,int lTotalDuration)
     {
-        if (textTotalDurationn != null) {
+        if (mediaController != null) {
             // Обновление текстовых полей
-            textTotalDurationn.setText(TotalDuration);
+            textTotalDuration.setText(TotalDuration);
             Toast.makeText(this,"dsadsadsa",Toast.LENGTH_SHORT).show();
         }
         TotalDur=lTotalDuration;
     }
-    public void updateTextTimeandSeek(String TotalDuration,long lTotalDuration) {//Boolean CheckisPlaying
-    /*    if (mediaController != null) {
-           *//* textTotalDuration.post(new Runnable() {
-                @Override
-                public void run() {
-                    textTotalDuration.setText(TotalDuration);
-                }
-            });*//*
-
-            //seekBar.setMax(currentSong.getDuration());
-            //seekBar.setProgress(musicService.getCurrentSongIndex());
-        }*/
-        if(mediaController==null)
-            Toast.makeText(this,"Fddsf",Toast.LENGTH_SHORT).show();
-        //textTotalDuration.setText(TotalDuration);
-        //TotalDur=lTotalDuration;
-       /* runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                // обновляем элементы пользовательского интерфейса
-                textTotalDuration.setText(TotalDuration);
-                TotalDur=lTotalDuration;
-            }
-        });*/
-    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
