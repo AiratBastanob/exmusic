@@ -23,11 +23,11 @@ import java.util.Random;
 public class MusicPlayerActivity extends AppCompatActivity {
 
     public static final String Broadcast_PLAY_NEW_AUDIO = "com.example.myapplication.PlayNewAudio";
-    private ImageButton playButton,pauseButton,skipToNextButton,skipToPreviousButton,stopButton,Repeat,shuffle;
+    private ImageButton playButton,pauseButton,skipToNextButton,skipToPreviousButton,stopButton,Repeat,shuffle,next_10,replay_10;
     protected TextView songTitleTextView,textCurrentTime,textTotalDuration,artistTextView;
     protected SeekBar playerSeekBar;
     private boolean isBound = false;
-    private int TotalDur;
+    private int TotalDur,seek;
     private MusicService.PlayerServiceBinder playerServiceBinder;
     private MusicService musicService;
     private MediaControllerCompat mediaController;
@@ -54,6 +54,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
         textTotalDuration = findViewById(R.id.textTotalDuration);
         shuffle = findViewById(R.id.shuffle);
         playerSeekBar = findViewById(R.id.seek_bar);
+        replay_10 = findViewById(R.id.replay10);
+        next_10 = findViewById(R.id.forward_10);
 
         //playerSeekBar.setMax(100);
 
@@ -153,6 +155,41 @@ public class MusicPlayerActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (mediaController != null)
                     mediaController.getTransportControls().skipToPrevious();
+            }
+        });
+
+        next_10.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                if(playerServiceBinder != null){
+                    Runnable next10=new Runnable() {
+                        @Override
+                        public void run() {
+                            seek = playerServiceBinder.GetCurrentPosition() + (10 * 1000);
+                            playerServiceBinder.SetPositionPlayer(seek);
+                        }
+                    };
+                    Thread thread=new Thread(next10);
+                    thread.start();
+                }
+            }
+        });
+        replay_10.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                if(playerServiceBinder != null){
+                    Runnable replay10=new Runnable() {
+                        @Override
+                        public void run() {
+                            seek = playerServiceBinder.GetCurrentPosition() - (10 * 1000);
+                            playerServiceBinder.SetPositionPlayer(seek);
+                        }
+                    };
+                    Thread thread=new Thread(replay10);
+                    thread.start();
+                }
             }
         });
 
@@ -351,7 +388,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
     }
 
     protected void updateUI() {//Boolean CheckisPlaying
-        if (mediaController != null) {
+        if (mediaController != null && playerServiceBinder != null) {
         /*    Song currentSong = musicService.getCurrentSong();
             if (currentSong != null) {
                 songTitleTextView.setText(currentSong.getTitle());

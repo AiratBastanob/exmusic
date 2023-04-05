@@ -46,6 +46,12 @@
         android:layout_below="@id/seek_bar"
         android:gravity="center"
         android:orientation="horizontal">
+        <ImageButton
+            android:id="@+id/replay10"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_replay_10" />
         <TextView
             android:id="@+id/textCurrentTime"
             android:layout_width="wrap_content"
@@ -102,6 +108,12 @@
             android:textColor="#212121"
             android:textSize="18sp"
             android:textStyle="bold" />
+        <ImageButton
+            android:id="@+id/forward_10"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_forward_10" />
     </LinearLayout>
     <ImageButton
         android:id="@+id/stop"
