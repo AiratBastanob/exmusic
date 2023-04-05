@@ -162,7 +162,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
             @Override
             public void onClick(View v)
             {
-                if(playerServiceBinder != null){
+                if(playerServiceBinder != null && mediaController != null){
                     Runnable next10=new Runnable() {
                         @Override
                         public void run() {
@@ -179,7 +179,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
             @Override
             public void onClick(View v)
             {
-                if(playerServiceBinder != null){
+                if(playerServiceBinder != null && mediaController != null){
                     Runnable replay10=new Runnable() {
                         @Override
                         public void run() {
