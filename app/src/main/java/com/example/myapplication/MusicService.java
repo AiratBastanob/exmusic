@@ -47,7 +47,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     public static final String ACTION_NEXT = "com.example.myapplication.ACTION_NEXT";
     public static final String ACTION_STOP = "com.example.myapplication.ACTION_STOP";
 
-    private MediaPlayer player;
     private ArrayList<MusicRepository.Song> songs;
     private MusicRepository.Song song;
 
@@ -82,15 +81,11 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private MediaPlayer mediaPlayer = new MediaPlayer();
     private AudioFocusRequest audioFocusRequest;
     private boolean audioFocusRequested = false,isShuffle,isRepeat;
-
     private int duration;
     private String StringDuration;
     private MusicRepository.Song track;
-
     private int currentStateCopy;
-
     public static final String ACTION_TOGGLE_PLAYBACK = "com.example.musicplayer.ACTION_TOGGLE_PLAYBACK";
-
     private final MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
 
     private final PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder().setActions(
@@ -101,13 +96,12 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                     | PlaybackStateCompat.ACTION_SKIP_TO_NEXT
                     | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
     );
-
-
     private final int NOTIFICATION_ID = 116;
     private final String NOTIFICATION_DEFAULT_CHANNEL_ID = "VKaif_Channel";
     private final MusicRepository musicRepository = new MusicRepository();
-    boolean checkPause=false;
+    private boolean checkPause=false,checkStop=false;
     String TAG="d";
+    private String currentUri;
 
     @Override
     public void onAudioFocusChange(int focusChange) {
@@ -116,7 +110,10 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
     @Override
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
-
+        if(activity!=null)
+        {
+            activity.playerSeekBar.setSecondaryProgress(percent);
+        }
     }
 
     @Override
@@ -195,7 +192,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
     private MediaSessionCompat.Callback mediaSessionCallback = new MediaSessionCompat.Callback() {
 
-        private String currentUri;
+        //private String currentUri;
         int currentState = PlaybackStateCompat.STATE_STOPPED;
 
         @Override
@@ -214,11 +211,11 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
             if (!audioFocusRequested) {
                 audioFocusRequested = true;
-
                 int audioFocusResult;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     audioFocusResult = audioManager.requestAudioFocus(audioFocusRequest);
-                } else {
+                }
+                else {
                     audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
                 }
                 if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
@@ -301,45 +298,40 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
             prepareToPlay(track.getMusicPath());
         }
-        public void prepareToPlay(String uri)
-        {
-            if (!uri.equals(currentUri))
-            {
-                if (mediaPlayer == null){
-                    mediaPlayer = new MediaPlayer();
-                }
-
-                currentUri = uri;
-
-                //Set up MediaPlayer event listeners
-                mediaPlayer.setOnCompletionListener(MusicService.this);
-                mediaPlayer.setOnPreparedListener(MusicService.this);
-
-                //Reset so that the MediaPlayer is not pointing to another data source
-                mediaPlayer.reset();
-
-                try
-                {
-                    mediaPlayer.setDataSource(currentUri);
-                    mediaPlayer.prepare();
-                    duration=mediaPlayer.getDuration();
-                    StringDuration=musicRepository.ConvertingTime(duration);
-                    updateMetadataFromTrack(track);
-                    Log.d(TAG, "setDataSource");
-
-                }
-                catch (IOException | IllegalArgumentException | IllegalStateException e) {}
-            }
-        }
-        private void updateMetadataFromTrack(MusicRepository.Song track) {
-            metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, BitmapFactory.decodeResource(getResources(), track.getBitmapResId()));
-            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, track.getTitle());
-            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track.getArtist());
-            metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track.getArtist());
-            metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION,duration);
-            mediaSession.setMetadata(metadataBuilder.build());
-        }
     };
+    public void prepareToPlay(String uri)
+    {
+        if (!uri.equals(currentUri))
+        {
+            if (mediaPlayer == null){
+                mediaPlayer = new MediaPlayer();
+            }
+            currentUri = uri;
+            //Set up MediaPlayer event listeners
+            mediaPlayer.setOnCompletionListener(MusicService.this);
+            mediaPlayer.setOnPreparedListener(MusicService.this);
+            //Reset so that the MediaPlayer is not pointing to another data source
+            mediaPlayer.reset();
+            try
+            {
+                mediaPlayer.setDataSource(currentUri);
+                mediaPlayer.prepare();
+                duration=mediaPlayer.getDuration();
+                StringDuration=musicRepository.ConvertingTime(duration);
+                updateMetadataFromTrack(track);
+                Log.d(TAG, "setDataSource");
+            }
+            catch (IOException | IllegalArgumentException | IllegalStateException e) {}
+        }
+    }
+    private void updateMetadataFromTrack(MusicRepository.Song track) {
+        metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, BitmapFactory.decodeResource(getResources(), track.getBitmapResId()));
+        metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, track.getTitle());
+        metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track.getArtist());
+        metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track.getArtist());
+        metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION,duration);
+        mediaSession.setMetadata(metadataBuilder.build());
+    }
     protected Boolean GetisRepeat() {
         if (mediaPlayer.isLooping()) {
             return true;
@@ -428,6 +420,9 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 activity.textCurrentTime.setText(R.string.zero);
                 activity.isPlaying=false;
                 activity.updateUI();
+                checkStop=true;
+                track = musicRepository.getCurrent();
+                prepareToPlay(track.getMusicPath());
                 Log.d(TAG,"ЗЗЗЗЗЗАААААШШШШШШШЕЕЕЕЕЕЕЕЕЕЛЛЛЛЛЛ444444444444444444444");
             }
         }
@@ -444,10 +439,19 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 activity.isPlaying=true;
                 activity.updateUI();
             }
-            activity.updateTextView(StringDuration,duration);
-            activity.isPlaying=true;
-            playMedia();
-            activity.updateSeekBar();
+            if(checkStop)
+            {
+
+            }
+            else
+            {
+                activity.updateTextView(StringDuration,duration);
+                activity.isPlaying=true;
+                checkStop=false;
+                playMedia();
+                activity.updateSeekBar();
+            }
+
             Log.d(TAG, "onPrepared");
         }
     }

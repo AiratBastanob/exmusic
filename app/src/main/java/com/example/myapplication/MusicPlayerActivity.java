@@ -37,7 +37,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
     private final MusicRepository musicRepository = new MusicRepository();
     protected Handler handler = new Handler();
 
-    boolean isPlaying = false,isRepeat=false,isShuffle=false,check=true;
+    boolean isPlaying = false,isRepeat=false,isShuffle=false,check=true,isStop=false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
