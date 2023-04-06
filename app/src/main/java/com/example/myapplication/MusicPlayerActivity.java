@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
@@ -85,7 +86,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
                 // Вызов методов MusicService, которые нужны в активити
                 musicService.setActivity(MusicPlayerActivity.this);
                 //new Intent(MusicPlayerActivity.this, MusicService.class).putExtra("idmusic", 1);
-                startService( new Intent(MusicPlayerActivity.this, MusicService.class).putExtra("idmusic", idMusic));
+                //startService( new Intent(MusicPlayerActivity.this, MusicService.class).putExtra("idmusic", idMusic));
+                playerServiceBinder.SetPrepareMusic(idMusic);
             }
 
             @Override
@@ -98,17 +100,16 @@ public class MusicPlayerActivity extends AppCompatActivity {
                 }
             }
         };
-
         bindService(new Intent(this, MusicService.class), serviceConnection, BIND_AUTO_CREATE);
 
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.d("d","play2222222222222222222222222");
                 if (mediaController != null)
                 {
                     mediaController.getTransportControls().play();
                     isPlaying = true;
-                    //updateUI(isPlaying);
                     updateUI();
                     updateSeekBar();
                 }
@@ -205,13 +206,6 @@ public class MusicPlayerActivity extends AppCompatActivity {
                         int PlayerPosition=playerServiceBinder.GetDurationPlayer();
                         int playPosition = PlayerPosition * seekBar.getProgress();
                         playerServiceBinder.SetPositionPlayer(playPosition);
-                     /*   textCurrentTime.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                textCurrentTime.setText(musicRepository.ConvertingTime(playerServiceBinder.GetCurrentPosition()));
-                            }
-                        });*/
-                        //textCurrentTime.setText(musicRepository.ConvertingTime(playerServiceBinder.GetCurrentPosition()));
                     }
                 };
                 Thread thread=new Thread(playerseekbar);
@@ -387,21 +381,13 @@ public class MusicPlayerActivity extends AppCompatActivity {
         });
     }
 
-    protected void updateUI() {//Boolean CheckisPlaying
+    protected void updateUI() {
         if (mediaController != null && playerServiceBinder != null) {
-        /*    Song currentSong = musicService.getCurrentSong();
-            if (currentSong != null) {
-                songTitleTextView.setText(currentSong.getTitle());
-                artistTextView.setText(currentSong.getArtist());
-                //seekBar.setMax(currentSong.getDuration());
-                seekBar.setProgress(musicService.getCurrentSongIndex());
-            }*/
-            //seekBar.setProgress(musicService.getCurrentSongIndex());
-
             if (isPlaying) {
                 playButton.setVisibility(View.GONE);
                 pauseButton.setVisibility(View.VISIBLE);
             } else {
+                //Log.d("d","updateui2222222222222222222222222");
                 playButton.setVisibility(View.VISIBLE);
                 pauseButton.setVisibility(View.GONE);
             }
