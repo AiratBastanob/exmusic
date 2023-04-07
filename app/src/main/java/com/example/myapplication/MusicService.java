@@ -505,27 +505,30 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             if(checkShuffle)
             {
                 isShuffle=true;
-                new  StorageSettingPlayer(getApplicationContext()).storeAudio(isShuffle,"Shuffle");
+                //new  StorageSettingPlayer(getApplicationContext()).storeAudio(isShuffle,"Shuffle");
             }
             else
             {
                 isShuffle=false;
-                new  StorageSettingPlayer(getApplicationContext()).storeAudio(isShuffle,"Shuffle");
+                //new  StorageSettingPlayer(getApplicationContext()).storeAudio(isShuffle,"Shuffle");
             }
+            storage.storeAudio(isShuffle,"Shuffle");
+            mediaPlayer.setLooping(false);
         }
         protected void SetRepeat(Boolean checkRepeat) {
             if(checkRepeat)
             {
                 mediaPlayer.setLooping(true);
                 isRepeat=true;
-                storage.storeAudio(isRepeat,"Repeat");
+                //storage.storeAudio(isRepeat,"Repeat");
             }
             else
             {
                 mediaPlayer.setLooping(false);
                 isRepeat=false;
-                storage.storeAudio(isRepeat,"Repeat");
+                //storage.storeAudio(isRepeat,"Repeat");
             }
+            storage.storeAudio(isRepeat,"Repeat");
         }
     }
 

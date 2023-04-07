@@ -12,8 +12,8 @@ public class RandomMusic
         Random r = new Random();
         while (check)
         {
-            RandomIdMusic = r.nextInt(5 - 1) + 1;
-            if(RandomIdMusic.equals(idMusic) || RandomIdMusic>=5)
+            RandomIdMusic = r.nextInt(5);
+            if(RandomIdMusic.equals(idMusic))
             {
 
             }

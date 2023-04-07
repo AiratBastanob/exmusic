@@ -226,7 +226,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
                 }
                 else
                 {
-                    check=true;
+                    //check=true;
                     if (isShuffle)
                     {
                         isShuffle=false;
@@ -282,7 +282,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
                             else
                             {
                                 isShuffle=true;
-                             *//*   while (check)
+                                while (check)
                                 {
                                     RandomIdMusic = r.nextInt(26 - 1) + 1;
                                     if(RandomIdMusic.equals(idMusic) || RandomIdMusic>=26)
@@ -300,7 +300,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
                                             }
                                         });
                                     }
-                                }*//*
+                                }
                                 shuffle.post(new Runnable() {
                                     @Override
                                     public void run() {
@@ -344,31 +344,27 @@ public class MusicPlayerActivity extends AppCompatActivity {
                         }
                         else
                         {
-                            if(isRepeat)//mediaPlayer.isLooping()musicService.GetisRepeat()
+                            if(isRepeat)
                             {
                                 isRepeat=false;
-                                //musicService.SetRepeat(isRepeat);
-                                playerServiceBinder.SetRepeat(isRepeat);
-                                //mediaPlayer.setLooping(false);
                                 Repeat.post(new Runnable() {
                                     @Override
                                     public void run() {
                                         Repeat.setImageResource(R.drawable.ic_repeat);
                                     }
                                 });
+                                playerServiceBinder.SetRepeat(isRepeat);
                             }
                             else
                             {
                                 isRepeat=true;
-                                playerServiceBinder.SetRepeat(isRepeat);
-                                //musicService.SetRepeat(isRepeat);
-                                //mediaPlayer.setLooping(true);
                                 Repeat.post(new Runnable() {
                                     @Override
                                     public void run() {
                                         Repeat.setImageResource(R.drawable.ic_repeat_selected);
                                     }
                                 });
+                                playerServiceBinder.SetRepeat(isRepeat);
                             }
                         }
                     }
@@ -385,7 +381,6 @@ public class MusicPlayerActivity extends AppCompatActivity {
                 playButton.setVisibility(View.GONE);
                 pauseButton.setVisibility(View.VISIBLE);
             } else {
-                //Log.d("d","updateui2222222222222222222222222");
                 playButton.setVisibility(View.VISIBLE);
                 pauseButton.setVisibility(View.GONE);
             }
