@@ -397,6 +397,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 refreshNotificationAndForegroundStatus(currentStateCopy);
                 activity.playerSeekBar.setProgress(0);
                 IdMusic=randomMusic.SetRandomId(storage.loadAudioIndex());
+                storage.storeAudioIndex(IdMusic);
                 musicRepository.setIdUserMusic(IdMusic);
                 activity.isPlaying=false;
                 activity.updateUI();
