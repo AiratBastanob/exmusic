@@ -105,7 +105,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d("d","play2222222222222222222222222");
+                Log.d("d","PLAYACTIVITY");
                 if (mediaController != null)
                 {
                     mediaController.getTransportControls().play();
@@ -219,8 +219,6 @@ public class MusicPlayerActivity extends AppCompatActivity {
             @Override
             public void onClick(View view)
             {
-                Toast message1=Toast.makeText(MusicPlayerActivity.this,"зашел",Toast.LENGTH_SHORT);
-                message1.show();
                 if(isRepeat)
                 {
                     Toast message2=Toast.makeText(MusicPlayerActivity.this,"Cannot_select_random_music_repeat_on",Toast.LENGTH_SHORT);
@@ -242,7 +240,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
                         shuffle.setImageResource(R.drawable.ic_shuffle_selected);
                         //musicService.SetShuffle(isShuffle);
                         playerServiceBinder.SetShuffle(isShuffle);
-                        Toast message3=Toast.makeText(MusicPlayerActivity.this,"зашел2",Toast.LENGTH_SHORT);
+                        Toast message3=Toast.makeText(MusicPlayerActivity.this,"ShuffleTRUE",Toast.LENGTH_SHORT);
                         message3.show();
                     }
                 }
@@ -426,7 +424,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
         if (mediaController != null) {
             // Обновление текстовых полей
             textTotalDuration.setText(TotalDuration);
-            Toast.makeText(this,"dsadsadsa",Toast.LENGTH_SHORT).show();
+            Toast.makeText(this,"UPDATETOTALTIME",Toast.LENGTH_SHORT).show();
         }
         TotalDur=lTotalDuration;
     }

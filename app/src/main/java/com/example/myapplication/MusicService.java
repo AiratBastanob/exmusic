@@ -226,6 +226,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             }
             else
             {
+                Log.d(TAG,"ONPLAY");
                 playMedia();
                 //prepareToPlay(track.getMusicPath());
             }
@@ -389,24 +390,25 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         checkPause=false;
         //Invoked when playback of a media source has completed.
         if (activity != null) {
-            Log.d(TAG,"ЗЗЗЗЗЗАААААШШШШШШШЕЕЕЕЕЕЕЕЕЕЛЛЛЛЛЛ");
             if(isShuffle)
             {
                 stopMedia();
                 currentStateCopy = PlaybackStateCompat.STATE_STOPPED;
                 refreshNotificationAndForegroundStatus(currentStateCopy);
                 activity.playerSeekBar.setProgress(0);
-                IdMusic=randomMusic.SetRandomId(IdMusic);
+                IdMusic=randomMusic.SetRandomId(storage.loadAudioIndex());
                 musicRepository.setIdUserMusic(IdMusic);
                 activity.isPlaying=false;
                 activity.updateUI();
+                track = musicRepository.getCurrent();
+                prepareToPlay(track.getMusicPath());
                 mediaSessionCallback.onPlay();
-                Log.d(TAG,"ЗЗЗЗЗЗАААААШШШШШШШЕЕЕЕЕЕЕЕЕЕЛЛЛЛЛЛ2222222222222222222222222");
+                Log.d(TAG,"SHUFFLE");
             }
             else if(isRepeat)
             {
                 mediaPlayer.setLooping(true);
-                Log.d(TAG,"ЗЗЗЗЗЗАААААШШШШШШШЕЕЕЕЕЕЕЕЕЕЛЛЛЛЛЛ33333333333333");
+                Log.d(TAG,"REPEAT");
             }
             else
             {
@@ -425,7 +427,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 musicRepository.setIdUserMusic(storage.loadAudioIndex());
                 track = musicRepository.getCurrent();
                 prepareToPlay(track.getMusicPath());
-                Log.d(TAG,"ЗЗЗЗЗЗАААААШШШШШШШЕЕЕЕЕЕЕЕЕЕЛЛЛЛЛЛ444444444444444444444");
+                Log.d(TAG,"COMPLETION");
             }
         }
     }
@@ -433,7 +435,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private void playMedia()
     {
         if (activity != null) {
-            if(isShuffle)
+           /* if(isShuffle)
             {
                 activity.isPlaying=true;
                 activity.updateUI();
@@ -443,8 +445,11 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 activity.isPlaying=true;
                 mediaPlayer.start();
                 activity.updateSeekBar();
-            }
-
+            }*/
+            activity.isPlaying=true;
+            activity.updateUI();
+            mediaPlayer.start();
+            activity.updateSeekBar();
             Log.d(TAG, "onPrepared");
         }
     }
