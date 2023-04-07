@@ -275,6 +275,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         @Override
         public void onSkipToNext() {
             MusicRepository.Song track = musicRepository.getNext();
+            storage.storeAudioIndex(track.getBitmapResId());
             updateMetadataFromTrack(track);
 
             stopMedia();
@@ -288,6 +289,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         @Override
         public void onSkipToPrevious() {
             MusicRepository.Song track = musicRepository.getPrevious();
+            storage.storeAudioIndex(track.getBitmapResId());
             updateMetadataFromTrack(track);
 
             stopMedia();
@@ -300,29 +302,26 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     };
     public void prepareToPlay(String uri)
     {
-        if (!uri.equals(currentUri))
-        {
-            if (mediaPlayer == null){
-                mediaPlayer = new MediaPlayer();
-            }
-            currentUri = uri;
-            //Set up MediaPlayer event listeners
-            mediaPlayer.setOnCompletionListener(MusicService.this);
-            //Reset so that the MediaPlayer is not pointing to another data source
-            mediaPlayer.reset();
-            try
-            {
-                mediaPlayer.setDataSource(currentUri);
-                mediaPlayer.prepare();
-                duration=mediaPlayer.getDuration();
-                StringDuration=musicRepository.ConvertingTime(duration);
-                updateMetadataFromTrack(track);
-                Log.d(TAG, "setDataSource");
-            }
-            catch (IOException | IllegalArgumentException | IllegalStateException e) {}
-            if(activity!=null)
-                activity.updateTextView(StringDuration,duration);
+        if (mediaPlayer == null){
+            mediaPlayer = new MediaPlayer();
         }
+        currentUri = uri;
+        //Set up MediaPlayer event listeners
+        mediaPlayer.setOnCompletionListener(MusicService.this);
+        //Reset so that the MediaPlayer is not pointing to another data source
+        mediaPlayer.reset();
+        try
+        {
+            mediaPlayer.setDataSource(currentUri);
+            mediaPlayer.prepare();
+            duration=mediaPlayer.getDuration();
+            StringDuration=musicRepository.ConvertingTime(duration);
+            updateMetadataFromTrack(track);
+            Log.d(TAG, "setDataSource");
+        }
+        catch (IOException | IllegalArgumentException | IllegalStateException e) {}
+        if(activity!=null)
+            activity.updateTextView(StringDuration,duration);
     }
     private void updateMetadataFromTrack(MusicRepository.Song track) {
         metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, BitmapFactory.decodeResource(getResources(), track.getBitmapResId()));
@@ -423,6 +422,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 activity.textCurrentTime.setText(R.string.zero);
                 activity.isPlaying=false;
                 activity.updateUI();
+                musicRepository.setIdUserMusic(storage.loadAudioIndex());
                 track = musicRepository.getCurrent();
                 prepareToPlay(track.getMusicPath());
                 Log.d(TAG,"ЗЗЗЗЗЗАААААШШШШШШШЕЕЕЕЕЕЕЕЕЕЛЛЛЛЛЛ444444444444444444444");
@@ -489,6 +489,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         protected void SetPrepareMusic(int _IdMusic)
         {
             IdMusic = _IdMusic;
+            storage.storeAudioIndex(IdMusic);
             musicRepository.setIdUserMusic(IdMusic);
             track = musicRepository.getCurrent();
             Log.d(TAG, String.valueOf(IdMusic));

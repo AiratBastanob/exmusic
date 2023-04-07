@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 
 public class StorageSettingPlayer
 {
-    private Boolean setting;
     private final String STORAGE = "com.example.myapplication.STORAGE";
     private SharedPreferences preferences;
     private Context context;
@@ -21,17 +20,16 @@ public class StorageSettingPlayer
         editor.apply();
     }
 
-    public Boolean loadAudio(String nameSetting) {
-        preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
-        setting = preferences.getBoolean(nameSetting, false);
-        return setting;
-    }
-
     public void storeAudioIndex(int index) {
         preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         editor.putInt("audioIndex", index);
         editor.apply();
+    }
+
+    public Boolean loadAudio(String nameSetting) {
+        preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
+        return preferences.getBoolean(nameSetting, false);
     }
 
     public int loadAudioIndex() {
