@@ -221,7 +221,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                     return;
             }
             mediaSession.setActive(true); // Сразу после получения фокуса
-
+            //register after getting audio focus
             registerReceiver(becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
 
             mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
@@ -236,7 +236,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             {
                 Log.d(TAG,"ONPLAY");
                 playMedia();
-                //prepareToPlay(track.getMusicPath());
             }
             checkPause=false;
         }
