@@ -425,8 +425,10 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
         //isShuffle=storage.loadAudio("Shuffle");
-        isShuffle = new StorageSettingPlayer(getApplicationContext()).loadAudio("Shuffle");
-        isRepeat = new StorageSettingPlayer(getApplicationContext()).loadAudio("Repeat");
+        //isShuffle = new StorageSettingPlayer(getApplicationContext()).loadAudio("Shuffle");
+        isShuffle = storage.loadAudio("Shuffle");
+        //isRepeat = new StorageSettingPlayer(getApplicationContext()).loadAudio("Repeat");
+        isRepeat = storage.loadAudio("Repeat");
         checkPause = false;
         //Invoked when playback of a media source has completed.
         if (activity != null) {
@@ -513,11 +515,18 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         }
 
         protected void SetPositionPlayer(int Position) {
-            if (mediaPlayer.isPlaying()) {
-                mediaPlayer.pause();
+            if(activity!=null){
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.pause();
+                }
+                else{
+                    activity.isPlaying=true;
+                    activity.updateUI();
+                }
+                mediaPlayer.seekTo(Position);
+                mediaPlayer.start();
+                activity.updateSeekBar();
             }
-            mediaPlayer.seekTo(Position);
-            mediaPlayer.start();
         }
 
         protected void SetPrepareMusic(int _IdMusic) {

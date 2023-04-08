@@ -207,17 +207,18 @@ public class MusicPlayerActivity extends AppCompatActivity {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent)
             {
-                Runnable playerseekbar=new Runnable() {
+              /*  Runnable playerseekbar=new Runnable() {
                     @Override
                     public void run() {
-                        SeekBar seekBar=(SeekBar) view;
-                        int PlayerPosition=playerServiceBinder.GetDurationPlayer();
-                        int playPosition = PlayerPosition * seekBar.getProgress();
-                        playerServiceBinder.SetPositionPlayer(playPosition);
+
                     }
                 };
                 Thread thread=new Thread(playerseekbar);
-                thread.start();
+                thread.start();*/
+                SeekBar seekBar=(SeekBar) view;
+                int PlayerPosition=playerServiceBinder.GetDurationPlayer();
+                int playPosition = PlayerPosition * seekBar.getProgress();
+                playerServiceBinder.SetPositionPlayer(playPosition);
                 return false;
             }
         });
