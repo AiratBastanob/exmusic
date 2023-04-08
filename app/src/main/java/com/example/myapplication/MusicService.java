@@ -39,7 +39,7 @@ import java.util.ArrayList;
 
 public class MusicService extends Service implements MediaPlayer.OnCompletionListener,
         MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener,
-        MediaPlayer.OnInfoListener, MediaPlayer.OnBufferingUpdateListener, AudioManager.OnAudioFocusChangeListener {//MediaPlayer.OnPreparedListener,
+        MediaPlayer.OnInfoListener, MediaPlayer.OnBufferingUpdateListener {//MediaPlayer.OnPreparedListener,
 
     public static final String ACTION_PLAY = "com.example.myapplication.ACTION_PLAY";
     public static final String ACTION_PAUSE = "com.example.myapplication.ACTION_PAUSE";
@@ -99,14 +99,9 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private final int NOTIFICATION_ID = 116;
     private final String NOTIFICATION_DEFAULT_CHANNEL_ID = "VKaif_Channel";
     private final MusicRepository musicRepository = new MusicRepository();
-    private boolean checkPause=false,checkStop=false;
+    private boolean checkPause=false;
     String TAG="d";
     private String currentUri;
-
-    @Override
-    public void onAudioFocusChange(int focusChange) {
-
-    }
 
     @Override
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
@@ -135,12 +130,13 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
     @Override
     public boolean onInfo(MediaPlayer mp, int what, int extra) {
+        //Invoked to communicate some info
         return false;
     }
 
     @Override
     public void onSeekComplete(MediaPlayer mp) {
-
+//Invoked indicating the completion of a seek operation.
     }
 
     @Override
@@ -205,7 +201,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private MediaSessionCompat.Callback mediaSessionCallback = new MediaSessionCompat.Callback() {
 
         //private String currentUri;
-        int currentState = PlaybackStateCompat.STATE_STOPPED;
+        private int currentState = PlaybackStateCompat.STATE_STOPPED;
 
         @Override
         public void onPlay()
@@ -274,7 +270,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                     audioManager.abandonAudioFocus(audioFocusChangeListener);
                 }
             }
-
             mediaSession.setActive(false);
 
             mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_STOPPED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
@@ -363,11 +358,47 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         public void onAudioFocusChange(int focusChange) {
             switch (focusChange) {
                 case AudioManager.AUDIOFOCUS_GAIN:
-                    // resume playback
-                    mediaSessionCallback.onPlay(); // Не очень красиво
+                    //mediaSessionCallback.onPlay(); // Не очень красиво
+                    // возобновить воспроизведение
+                    if (mediaPlayer == null && activity!=null){
+                        activity.isPlaying=false;
+                        activity.playerSeekBar.setProgress(0);
+                        activity.textTotalDuration.setText(R.string.zero);
+                        activity.handler.removeCallbacks(activity.updater);//надо подумать
+                        activity.textCurrentTime.setText(R.string.zero);
+                        activity.updateUI();
+                        IdMusic=storage.loadAudioIndex();
+                        musicRepository.setIdUserMusic(IdMusic);
+                        track = musicRepository.getCurrent();
+                        prepareToPlay(track.getMusicPath());
+                    }
+                    else if (!mediaPlayer.isPlaying() && activity!=null)
+                    {
+                        duration=mediaPlayer.getDuration();
+                        StringDuration=musicRepository.ConvertingTime(duration);
+                        activity.updateTextView(StringDuration,duration);
+                        playMedia();
+                    }
+                    mediaPlayer.setVolume(1.0f, 1.0f);
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS:
+                    // Потеря фокуса на неограниченное время: остановить воспроизведение и отпустите медиаплеер
+                    if (mediaPlayer.isPlaying()) mediaPlayer.stop();
+                    mediaPlayer.release();
+                    mediaPlayer = null;
+                    mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_STOPPED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
+                    currentStateCopy = PlaybackStateCompat.STATE_STOPPED;
+                    refreshNotificationAndForegroundStatus(currentStateCopy);
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                    // Потеря фокуса на короткое время, но мы должны остановить воспроизведение
+                    // Мы не выпускаем медиаплеер, потому что воспроизведение, скорее всего, возобновится
+                    if (mediaPlayer.isPlaying()) mediaSessionCallback.onPause();
                     break;
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                    mediaSessionCallback.onPause();
+                    // Потерял фокус на короткое время, но можно продолжать играть
+                    // на ослабленном уровне
+                    if (mediaPlayer.isPlaying()) mediaPlayer.setVolume(0.1f, 0.1f);
                     break;
                 default:
                     mediaSessionCallback.onPause();
@@ -425,7 +456,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             }
             else
             {
-                //stopMedia();
                 mediaPlayer.reset();
                 unregisterReceiver(becomingNoisyReceiver);
                 mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
@@ -448,17 +478,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private void playMedia()
     {
         if (activity != null) {
-           /* if(isShuffle)
-            {
-                activity.isPlaying=true;
-                activity.updateUI();
-            }
-            else
-            {
-                activity.isPlaying=true;
-                mediaPlayer.start();
-                activity.updateSeekBar();
-            }*/
             activity.isPlaying=true;
             activity.updateUI();
             mediaPlayer.start();
