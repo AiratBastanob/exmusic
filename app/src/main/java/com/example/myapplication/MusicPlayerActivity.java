@@ -66,7 +66,6 @@ public class MusicPlayerActivity extends AppCompatActivity {
         next_10 = findViewById(R.id.forward_10);
 
         storage= new StorageSettingPlayer(this);
-
         musicService=new MusicService();
 
         callback = new MediaControllerCompat.Callback() {
@@ -444,6 +443,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
             unbindService(serviceConnection);
             isBound = false;
         }
+        handler.removeCallbacks(updater);
     }
     private void onRequestPermissionsNotification() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {

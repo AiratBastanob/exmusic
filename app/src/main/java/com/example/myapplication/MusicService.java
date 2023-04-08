@@ -203,8 +203,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     }
 
     private MediaSessionCompat.Callback mediaSessionCallback = new MediaSessionCompat.Callback() {
-
-        //private String currentUri;
         private int currentState = PlaybackStateCompat.STATE_STOPPED;
 
         @Override
@@ -322,11 +320,13 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             duration = mediaPlayer.getDuration();
             StringDuration = musicRepository.ConvertingTime(duration);
             updateMetadataFromTrack(track);
+            if (activity != null)
+                activity.updateTextView(StringDuration, duration);
             Log.d(TAG, "setDataSource");
-        } catch (IOException | IllegalArgumentException | IllegalStateException e) {
         }
-        if (activity != null)
-            activity.updateTextView(StringDuration, duration);
+        catch (IOException | IllegalArgumentException | IllegalStateException e) {
+        }
+
     }
 
     private void updateMetadataFromTrack(MusicRepository.Song track) {
@@ -468,7 +468,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     }
 
     private void playMedia() {
-        if (activity != null) {
+        if (activity != null)
+        {
             activity.isPlaying = true;
             activity.updateUI();
             mediaPlayer.start();
