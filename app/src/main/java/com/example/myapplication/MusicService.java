@@ -228,9 +228,12 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             currentState = PlaybackStateCompat.STATE_PLAYING;
 
             refreshNotificationAndForegroundStatus(currentState);
-            if (checkPause) {
+            if (checkPause)
+            {
                 resumeMedia();
-            } else {
+            }
+            else
+            {
                 Log.d(TAG, "ONPLAY");
                 playMedia();
             }
