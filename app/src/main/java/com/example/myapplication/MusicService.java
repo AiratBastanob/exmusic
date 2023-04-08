@@ -183,8 +183,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     public int onStartCommand(Intent intent, int flags, int startId) {
         MediaButtonReceiver.handleIntent(mediaSession, intent);
         //storage = new StorageSettingPlayer(getApplicationContext());
-        IdMusic = intent.getIntExtra("idmusic", 0);
-        musicRepository.setIdUserMusic(IdMusic);
+        //IdMusic = intent.getIntExtra("idmusic", 0);
+        //musicRepository.setIdUserMusic(IdMusic);
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -566,6 +566,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 {
                     NotificationManagerCompat.from(MusicService.this).notify(NOTIFICATION_ID, getNotification(playbackState));
                 }
+                NotificationManagerCompat.from(MusicService.this).notify(NOTIFICATION_ID, getNotification(playbackState));
                 stopForeground(false);
                 break;
             }

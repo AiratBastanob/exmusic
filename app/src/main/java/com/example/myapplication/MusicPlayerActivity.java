@@ -65,6 +65,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
         replay_10 = findViewById(R.id.replay10);
         next_10 = findViewById(R.id.forward_10);
 
+        storage= new StorageSettingPlayer(this);
+
         musicService=new MusicService();
 
         callback = new MediaControllerCompat.Callback() {
@@ -469,5 +471,4 @@ public class MusicPlayerActivity extends AppCompatActivity {
             }
         }
     }
-
 }
