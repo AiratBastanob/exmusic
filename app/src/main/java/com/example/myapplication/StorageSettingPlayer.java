@@ -26,7 +26,12 @@ public class StorageSettingPlayer
         editor.putInt("audioIndex", index);
         editor.apply();
     }
-
+    public void storeCheckNotif(int index) {
+        preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putInt("storeCheckNotif", index);
+        editor.apply();
+    }
     public Boolean loadAudio(String nameSetting) {
         preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
         return preferences.getBoolean(nameSetting, false);
@@ -36,7 +41,10 @@ public class StorageSettingPlayer
         preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
         return preferences.getInt("audioIndex", -1);//return -1 if no data found
     }
-
+    public int loadCheckNotif() {
+        preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
+        return preferences.getInt("storeCheckNotif", -1);//return -1 if no data found
+    }
     public void clearCachedAudioPlaylist() {
         preferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();

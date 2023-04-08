@@ -1,11 +1,17 @@
 package com.example.myapplication;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -37,6 +43,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
     private Integer idMusic=1,RandomIdMusic;
     private final MusicRepository musicRepository = new MusicRepository();
     protected Handler handler = new Handler();
+    private StorageSettingPlayer storage;
 
     boolean isPlaying = false,isRepeat=false,isShuffle=false,check=true,isStop=false;
     @Override
@@ -57,8 +64,6 @@ public class MusicPlayerActivity extends AppCompatActivity {
         playerSeekBar = findViewById(R.id.seek_bar);
         replay_10 = findViewById(R.id.replay10);
         next_10 = findViewById(R.id.forward_10);
-
-        //playerSeekBar.setMax(100);
 
         musicService=new MusicService();
 
@@ -101,6 +106,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
             }
         };
         bindService(new Intent(this, MusicService.class), serviceConnection, BIND_AUTO_CREATE);
+
+        onRequestPermissionsNotification();
 
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -419,7 +426,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
         if (mediaController != null) {
             // Обновление текстовых полей
             textTotalDuration.setText(TotalDuration);
-            Toast.makeText(this,"UPDATETOTALTIME",Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this,"UPDATETOTALTIME",Toast.LENGTH_SHORT).show();
         }
         TotalDur=lTotalDuration;
     }
@@ -435,6 +442,32 @@ public class MusicPlayerActivity extends AppCompatActivity {
             unbindService(serviceConnection);
             isBound = false;
         }
-
     }
+    private void onRequestPermissionsNotification() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(MusicPlayerActivity.this,"fdfds",Toast.LENGTH_SHORT).show();
+        }
+        else {
+            // запросить разрешение на отправку уведомлений
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+
+                ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.POST_NOTIFICATIONS }, 1);
+            }
+        }
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Разрешение получено, отправляем уведомление
+                storage.storeCheckNotif(1);
+            } else {
+                // Разрешение не получено, обработка ошибки
+                storage.storeCheckNotif(-1);
+                Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
 }
