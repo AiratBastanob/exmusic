@@ -131,7 +131,6 @@ public class MusicPlayerActivity extends AppCompatActivity {
                 {
                     mediaController.getTransportControls().pause();
                     isPlaying = false;
-                    //updateUI(isPlaying);
                     handler.removeCallbacks(updater);
                     updateUI();
                 }
@@ -145,7 +144,6 @@ public class MusicPlayerActivity extends AppCompatActivity {
                 {
                     mediaController.getTransportControls().stop();
                     isPlaying = false;
-                    //updateUI(isPlaying);
                     updateUI();
                 }
             }
@@ -207,14 +205,6 @@ public class MusicPlayerActivity extends AppCompatActivity {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent)
             {
-              /*  Runnable playerseekbar=new Runnable() {
-                    @Override
-                    public void run() {
-
-                    }
-                };
-                Thread thread=new Thread(playerseekbar);
-                thread.start();*/
                 SeekBar seekBar=(SeekBar) view;
                 int PlayerPosition=playerServiceBinder.GetDurationPlayer();
                 int playPosition = PlayerPosition * seekBar.getProgress();
@@ -228,32 +218,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
             @Override
             public void onClick(View view)
             {
-                if(isRepeat)
-                {
-                    Toast message2=Toast.makeText(MusicPlayerActivity.this,"Cannot_select_random_music_repeat_on",Toast.LENGTH_SHORT);
-                    message2.show();
-                }
-                else
-                {
-                    //check=true;
-                    if (isShuffle)
-                    {
-                        isShuffle=false;
-                        shuffle.setImageResource(R.drawable.ic_shuffle);
-                        //musicService.SetShuffle(isShuffle);
-                        playerServiceBinder.SetShuffle(isShuffle);
-                    }
-                    else
-                    {
-                        isShuffle=true;
-                        shuffle.setImageResource(R.drawable.ic_shuffle_selected);
-                        //musicService.SetShuffle(isShuffle);
-                        playerServiceBinder.SetShuffle(isShuffle);
-                        Toast message3=Toast.makeText(MusicPlayerActivity.this,"ShuffleTRUE",Toast.LENGTH_SHORT);
-                        message3.show();
-                    }
-                }
-          /*      Runnable Shuffle=new Runnable() {
+                Runnable Shuffle=new Runnable() {
                     @Override
                     public void run() {
                         if(isRepeat)
@@ -261,67 +226,39 @@ public class MusicPlayerActivity extends AppCompatActivity {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    Toast message=Toast.makeText(MusicPlayerActivity.this,"Cannot_select_random_music_repeat_on",Toast.LENGTH_SHORT);
-                                    message.show();
+                                    Toast message2=Toast.makeText(MusicPlayerActivity.this,"Cannot_select_random_music_repeat_on",Toast.LENGTH_SHORT);
+                                    message2.show();
                                 }
                             });
                         }
                         else
                         {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast message=Toast.makeText(MusicPlayerActivity.this,"зашел2",Toast.LENGTH_SHORT);
-                                    message.show();
-                                }
-                            });
-                            check=true;
-                            Random r = new Random();
                             if (isShuffle)
                             {
                                 isShuffle=false;
                                 shuffle.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        shuffle.setBackgroundResource(R.drawable.ic_shuffle);
+                                        shuffle.setImageResource(R.drawable.ic_shuffle);
                                     }
                                 });
-                                musicService.SetShuffle(isShuffle);
+                                playerServiceBinder.SetShuffle(isShuffle);
                             }
                             else
                             {
                                 isShuffle=true;
-                                while (check)
-                                {
-                                    RandomIdMusic = r.nextInt(26 - 1) + 1;
-                                    if(RandomIdMusic.equals(idMusic) || RandomIdMusic>=26)
-                                    {
-
-                                    }
-                                    else
-                                    {
-                                        check=false;
-                                        idMusic=RandomIdMusic;
-                                        shuffle.post(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                shuffle.setBackgroundResource(R.drawable.ic_shuffle_selected);
-                                            }
-                                        });
-                                    }
-                                }
                                 shuffle.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        shuffle.setBackgroundResource(R.drawable.ic_shuffle_selected);
+                                        shuffle.setImageResource(R.drawable.ic_shuffle_selected);
                                     }
                                 });
-                                musicService.SetShuffle(isShuffle);
+                                playerServiceBinder.SetShuffle(isShuffle);
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        Toast message=Toast.makeText(MusicPlayerActivity.this,"зашел2",Toast.LENGTH_SHORT);
-                                        message.show();
+                                        Toast message3=Toast.makeText(MusicPlayerActivity.this,"ShuffleTRUE",Toast.LENGTH_SHORT);
+                                        message3.show();
                                     }
                                 });
                             }
@@ -329,7 +266,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
                     }
                 };
                 Thread thread=new Thread(Shuffle);
-                thread.start();*/
+                thread.start();
             }
         });
 
