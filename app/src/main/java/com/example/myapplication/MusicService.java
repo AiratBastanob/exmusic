@@ -426,11 +426,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     }
 
     @Override
-    public void onCompletion(MediaPlayer mediaPlayer) {
-        //isShuffle=storage.loadAudio("Shuffle");
-        //isShuffle = new StorageSettingPlayer(getApplicationContext()).loadAudio("Shuffle");
+    public void onCompletion(MediaPlayer mediaPlayer) {       ;
         isShuffle = storage.loadAudio("Shuffle");
-        //isRepeat = new StorageSettingPlayer(getApplicationContext()).loadAudio("Repeat");
         isRepeat = storage.loadAudio("Repeat");
         checkPause = false;
         //Invoked when playback of a media source has completed.
@@ -525,12 +522,9 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                     mediaPlayer.start();
                 }
                 else{
-                    //activity.isPlaying=true;
-                    //activity.updateUI();
                     mediaPlayer.seekTo(Position);
                     mediaSessionCallback.onPlay();
                 }
-                //activity.updateSeekBar();
             }
         }
 
@@ -546,10 +540,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         protected void SetShuffle(Boolean checkShuffle) {
             if (checkShuffle) {
                 isShuffle = true;
-                //new  StorageSettingPlayer(getApplicationContext()).storeAudio(isShuffle,"Shuffle");
             } else {
-                isShuffle = false;
-                //new  StorageSettingPlayer(getApplicationContext()).storeAudio(isShuffle,"Shuffle");
+                isShuffle = false;            ;
             }
             storage.storeAudio(isShuffle, "Shuffle");
             mediaPlayer.setLooping(false);
@@ -559,11 +551,9 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             if (checkRepeat) {
                 mediaPlayer.setLooping(true);
                 isRepeat = true;
-                //storage.storeAudio(isRepeat,"Repeat");
             } else {
                 mediaPlayer.setLooping(false);
                 isRepeat = false;
-                //storage.storeAudio(isRepeat,"Repeat");
             }
             storage.storeAudio(isRepeat, "Repeat");
         }
