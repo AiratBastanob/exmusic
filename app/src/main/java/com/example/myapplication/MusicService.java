@@ -521,14 +521,16 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             if(activity!=null){
                 if (mediaPlayer.isPlaying()) {
                     mediaPlayer.pause();
+                    mediaPlayer.seekTo(Position);
+                    mediaPlayer.start();
                 }
                 else{
-                    activity.isPlaying=true;
-                    activity.updateUI();
+                    //activity.isPlaying=true;
+                    //activity.updateUI();
+                    mediaPlayer.seekTo(Position);
+                    mediaSessionCallback.onPlay();
                 }
-                mediaPlayer.seekTo(Position);
-                mediaPlayer.start();
-                activity.updateSeekBar();
+                //activity.updateSeekBar();
             }
         }
 
