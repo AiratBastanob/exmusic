@@ -26,7 +26,8 @@ public class MediaNotificationManager
                 .setContentIntent(controller.getSessionActivity())
                 .setDeleteIntent(
                         MediaButtonReceiver.buildMediaButtonPendingIntent(context, PlaybackStateCompat.ACTION_STOP))
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setProgress(100,,false);
         return builder;
     }
 }

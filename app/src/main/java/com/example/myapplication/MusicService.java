@@ -338,6 +338,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track.getArtist());
         metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track.getArtist());
         metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
+        metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mediaPlayer.getCurrentPosition());
         mediaSession.setMetadata(metadataBuilder.build());
     }
 
@@ -571,7 +572,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 {
                     NotificationManagerCompat.from(MusicService.this).notify(NOTIFICATION_ID, getNotification(playbackState));
                 }
-                NotificationManagerCompat.from(MusicService.this).notify(NOTIFICATION_ID, getNotification(playbackState));
+                //NotificationManagerCompat.from(MusicService.this).notify(NOTIFICATION_ID, getNotification(playbackState));
                 stopForeground(false);
                 break;
             }
@@ -603,6 +604,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         builder.setPriority(NotificationCompat.PRIORITY_HIGH);
         builder.setOnlyAlertOnce(true);
         builder.setChannelId(NOTIFICATION_DEFAULT_CHANNEL_ID);
+        //builder.setProgress(mediaPlayer.getDuration(),mediaPlayer.getCurrentPosition(),false);
         return builder.build();
     }
 }
