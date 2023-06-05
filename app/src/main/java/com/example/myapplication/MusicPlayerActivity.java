@@ -64,6 +64,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
         playerSeekBar = findViewById(R.id.seek_bar);
         replay_10 = findViewById(R.id.replay10);
         next_10 = findViewById(R.id.forward_10);
+        songTitleTextView=findViewById(R.id.song_title_text_view);
+
 
         storage= new StorageSettingPlayer(this);
         musicService=new MusicService();
@@ -113,13 +115,17 @@ public class MusicPlayerActivity extends AppCompatActivity {
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d("d","PLAYACTIVITY");
+                //Log.d("d","PLAYACTIVITY");
                 if (mediaController != null)
                 {
+                    //Log.d("d",String.valueOf(isPlaying));
+                    //isPlaying = true;
                     mediaController.getTransportControls().play();
-                    isPlaying = true;
-                    updateUI();
-                    updateSeekBar();
+                  /*  updateUI();
+                    updateSeekBar();*/
+                }
+                else{
+                    //Log.d("d","DSADSADAS");
                 }
             }
         });
@@ -129,8 +135,9 @@ public class MusicPlayerActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (mediaController != null)
                 {
-                    mediaController.getTransportControls().pause();
                     isPlaying = false;
+                    //Log.d("dPAUSEACTIVITY",String.valueOf(isPlaying));
+                    mediaController.getTransportControls().pause();
                     handler.removeCallbacks(updater);
                     updateUI();
                 }
@@ -142,8 +149,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (mediaController != null)
                 {
-                    mediaController.getTransportControls().stop();
                     isPlaying = false;
+                    mediaController.getTransportControls().stop();
                     updateUI();
                 }
             }
@@ -152,16 +159,25 @@ public class MusicPlayerActivity extends AppCompatActivity {
         skipToNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mediaController != null)
+                if (mediaController != null){
+                    playerSeekBar.setProgress(0);
+                    isPlaying = false;
                     mediaController.getTransportControls().skipToNext();
+                    updateUI();
+                }
+
             }
         });
 
         skipToPreviousButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mediaController != null)
+                if (mediaController != null){
+                    playerSeekBar.setProgress(0);
+                    isPlaying = false;
                     mediaController.getTransportControls().skipToPrevious();
+                    updateUI();
+                }
             }
         });
 
@@ -331,6 +347,9 @@ public class MusicPlayerActivity extends AppCompatActivity {
                 pauseButton.setVisibility(View.GONE);
             }
         }
+        else {
+            Toast.makeText(getApplicationContext(),"UPDATEUINOT",Toast.LENGTH_SHORT).show();
+        }
     }
 
     public Runnable updater = new Runnable()
@@ -382,6 +401,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
             isBound = false;
         }
         handler.removeCallbacks(updater);
+        storage.clearCachedAudioPlaylist();
     }
     private void onRequestPermissionsNotification() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
@@ -390,7 +410,6 @@ public class MusicPlayerActivity extends AppCompatActivity {
         else {
             // запросить разрешение на отправку уведомлений
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-
                 ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.POST_NOTIFICATIONS }, 1);
             }
         }

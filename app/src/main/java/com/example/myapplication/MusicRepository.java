@@ -85,25 +85,25 @@ public class MusicRepository {
         }
 
         public String getTitle() {
-            return title;
+            return this.title;
         }
 
         public String getArtist() {
-            return artist;
+            return this.artist;
         }
 
         public String getAlbum() {
-            return album;
+            return this.album;
         }
 
         public String getMusicPath() {
-            return MusicPath;
+            return this.MusicPath;
         }
         public int getBitmapResId() {
-            return bitmapResId;
+            return this.bitmapResId;
         }
         public Long getDuration() {
-            return duration;
+            return this.duration;
         }
     }
 }

@@ -182,9 +182,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         MediaButtonReceiver.handleIntent(mediaSession, intent);
-        //storage = new StorageSettingPlayer(getApplicationContext());
-        //IdMusic = intent.getIntExtra("idmusic", 0);
-        //musicRepository.setIdUserMusic(IdMusic);
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -228,16 +225,17 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             currentState = PlaybackStateCompat.STATE_PLAYING;
 
             refreshNotificationAndForegroundStatus(currentState);
+            Log.d("dPLAYSERVICE",String.valueOf(checkPause));
             if (checkPause)
             {
                 resumeMedia();
             }
             else
             {
-                Log.d(TAG, "ONPLAY");
+                Log.d("dPLAYSERVICE", "ONPLAY");
                 playMedia();
             }
-            checkPause = false;
+            checkPause = activity.isPlaying;
         }
 
         @Override
@@ -246,7 +244,11 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 mediaPlayer.pause();
                 resumePosition = mediaPlayer.getCurrentPosition();
                 checkPause = true;
-                unregisterReceiver(becomingNoisyReceiver);
+                if(activity.isPlaying){
+                    activity.isPlaying=false;
+                    activity.updateUI();
+                }
+                //unregisterReceiver(becomingNoisyReceiver);
             }
             mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
             currentState = PlaybackStateCompat.STATE_PAUSED;
@@ -281,13 +283,14 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
         @Override
         public void onSkipToNext() {
-            MusicRepository.Song track = musicRepository.getNext();
+            stopMedia();
+            checkPause = false;
+
+            track = musicRepository.getNext();
             storage.storeAudioIndex(track.getBitmapResId());
             updateMetadataFromTrack(track);
-
-            stopMedia();
-            mediaPlayer.reset();
-
+            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
+            currentState = PlaybackStateCompat.STATE_PAUSED;
             refreshNotificationAndForegroundStatus(currentState);
 
             prepareToPlay(track.getMusicPath());
@@ -295,13 +298,13 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
         @Override
         public void onSkipToPrevious() {
-            MusicRepository.Song track = musicRepository.getPrevious();
+            stopMedia();
+            checkPause = false;
+            track = musicRepository.getPrevious();
             storage.storeAudioIndex(track.getBitmapResId());
             updateMetadataFromTrack(track);
-
-            stopMedia();
-            mediaPlayer.reset();
-
+            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
+            currentState = PlaybackStateCompat.STATE_PAUSED;
             refreshNotificationAndForegroundStatus(currentState);
 
             prepareToPlay(track.getMusicPath());
@@ -323,6 +326,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             duration = mediaPlayer.getDuration();
             StringDuration = musicRepository.ConvertingTime(duration);
             updateMetadataFromTrack(track);
+            activity.artistTextView.setText(track.getArtist());
+            activity.songTitleTextView.setText(track.getTitle());
             if (activity != null)
                 activity.updateTextView(StringDuration, duration);
             Log.d(TAG, "setDataSource");
@@ -347,14 +352,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             return true;
         }
         return false;
-    }
-
-    private void resumeMedia() {
-        if (!mediaPlayer.isPlaying() && activity != null) {
-            mediaPlayer.seekTo(resumePosition);
-            mediaPlayer.start();
-            activity.updateSeekBar();
-        }
     }
 
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
@@ -441,14 +438,14 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 IdMusic = randomMusic.SetRandomId(storage.loadAudioIndex());
                 storage.storeAudioIndex(IdMusic);
                 musicRepository.setIdUserMusic(IdMusic);
-                activity.isPlaying = false;
-                activity.updateUI();
+                Log.d(TAG, String.valueOf(activity.isPlaying));
                 track = musicRepository.getCurrent();
                 prepareToPlay(track.getMusicPath());
                 mediaSessionCallback.onPlay();
                 Log.d(TAG, "SHUFFLE");
             } else if (isRepeat) {
                 mediaPlayer.setLooping(true);
+                activity.isPlaying =true;
                 Log.d(TAG, "REPEAT");
             } else {
                 mediaPlayer.reset();
@@ -469,7 +466,15 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             }
         }
     }
-
+    private void resumeMedia() {
+        if (!mediaPlayer.isPlaying() && activity != null) {
+            activity.isPlaying = true;
+            activity.updateUI();
+            mediaPlayer.seekTo(resumePosition);
+            mediaPlayer.start();
+            activity.updateSeekBar();
+        }
+    }
     private void playMedia() {
         if (activity != null)
         {
@@ -485,6 +490,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         if (mediaPlayer == null) return;
         if (mediaPlayer.isPlaying()) {
             mediaPlayer.stop();
+            mediaPlayer.reset();
         }
     }
 
@@ -562,17 +568,18 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
     @SuppressLint("MissingPermission")
     private void refreshNotificationAndForegroundStatus(int playbackState) {
+        Notification notification = getNotification(playbackState);
+
         switch (playbackState) {
             case PlaybackStateCompat.STATE_PLAYING: {
-                startForeground(NOTIFICATION_ID, getNotification(playbackState));
+                startForeground(NOTIFICATION_ID, notification);
                 break;
             }
             case PlaybackStateCompat.STATE_PAUSED: {
-                if(storage.loadCheckNotif()==1)
-                {
-                    NotificationManagerCompat.from(MusicService.this).notify(NOTIFICATION_ID, getNotification(playbackState));
-                }
-                //NotificationManagerCompat.from(MusicService.this).notify(NOTIFICATION_ID, getNotification(playbackState));
+            /*    if (storage.loadCheckNotif() == 1) {
+
+                }*/
+                NotificationManagerCompat.from(MusicService.this).notify(NOTIFICATION_ID, notification);
                 stopForeground(false);
                 break;
             }
@@ -582,6 +589,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             }
         }
     }
+
 
     private Notification getNotification(int playbackState) {
         NotificationCompat.Builder builder = MediaNotificationManager.from(this, mediaSession);
