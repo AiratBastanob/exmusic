@@ -53,19 +53,12 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                     | PlaybackStateCompat.ACTION_SKIP_TO_NEXT
                     | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
     );
-    private ArrayList<MusicRepository.Song> songs;
-    private MusicRepository.Song song;
-
     // Binder для связи с активити
     private IBinder binder = new PlayerServiceBinder();
     // Ссылка на активити
     private MusicPlayerActivity activity;
 
     private RandomMusic randomMusic;
-    private int currentSongIndex = 0;
-    private NotificationManager notificationManager;
-    private Notification notification;
-
     StorageSettingPlayer storage;
 
     //MediaSession
@@ -87,18 +80,14 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private MediaPlayer mediaPlayer = new MediaPlayer();
     private AudioFocusRequest audioFocusRequest;
     private boolean audioFocusRequested = false, isShuffle, isRepeat;
-    private int duration;
-    private String StringDuration;
+    private int duration,currentStateCopy;
+    private String StringDuration,TAG = "d",currentUri;
     private MusicRepository.Song track;
-    private int currentStateCopy;
-    public static final String ACTION_TOGGLE_PLAYBACK = "com.example.musicplayer.ACTION_TOGGLE_PLAYBACK";
     private final MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
     private final int NOTIFICATION_ID = 116;
     private final String NOTIFICATION_DEFAULT_CHANNEL_ID = "VKaif_Channel";
     private final MusicRepository musicRepository = new MusicRepository();
     private boolean checkPause = false;
-    String TAG = "d";
-    private String currentUri;
 
     @Override
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
@@ -228,7 +217,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             //register after getting audio focus
             registerReceiver(becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
 
-            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
+            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING, PlaybackStateCompat.ACTION_PLAY, 1).build());
             currentState = PlaybackStateCompat.STATE_PLAYING;
 
             refreshNotificationAndForegroundStatus(currentState);
@@ -257,7 +246,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 }
                 //unregisterReceiver(becomingNoisyReceiver);
             }
-            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
+            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.ACTION_PAUSE, 1).build());
             currentState = PlaybackStateCompat.STATE_PAUSED;
             refreshNotificationAndForegroundStatus(currentState);
         }
@@ -350,13 +339,14 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track.getArtist());
         metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track.getArtist());
         metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
-        metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mediaPlayer.getCurrentPosition());
+        metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mediaPlayer.getDuration());
         mediaSession.setMetadata(metadataBuilder.build());
     }
 
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
         public void onAudioFocusChange(int focusChange) {
+            Log.d("AudioFocusChange","AudioFocusChange");
             switch (focusChange) {
                 case AudioManager.AUDIOFOCUS_GAIN:
                     //mediaSessionCallback.onPlay(); // Не очень красиво
@@ -522,10 +512,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             return null;
         }
 
-        protected Boolean GetisPlayerPlayer() {
-            return mediaPlayer.isPlaying();
-        }
-
         protected void SetPositionPlayer(int Position) {
             if(activity!=null){
                 if (mediaPlayer.isPlaying()) {
@@ -534,6 +520,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                     mediaPlayer.start();
                 }
                 else{
+                    resumePosition=Position;
                     mediaPlayer.seekTo(Position);
                     mediaSessionCallback.onPlay();
                 }
@@ -641,7 +628,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             previousIntent.setAction(String.valueOf(PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS));
             PendingIntent previousPendingIntent = PendingIntent.getService(this, 0, previousIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             builder.addAction(android.R.drawable.ic_media_previous, getString(R.string.previous), previousPendingIntent);
-
             Intent playPauseIntent = new Intent(this, MusicService.class);
             playPauseIntent.setAction(String.valueOf(PlaybackStateCompat.ACTION_PLAY_PAUSE));
             PendingIntent playPausePendingIntent = PendingIntent.getService(this, 0, playPauseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -650,7 +636,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             } else {
                 builder.addAction(android.R.drawable.ic_media_play, getString(R.string.play), playPausePendingIntent);
             }
-
             Intent nextIntent = new Intent(this, MusicService.class);
             nextIntent.setAction(String.valueOf(PlaybackStateCompat.ACTION_SKIP_TO_NEXT));
             PendingIntent nextPendingIntent = PendingIntent.getService(this, 0, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -675,6 +660,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         builder.setPriority(NotificationCompat.PRIORITY_HIGH);
         builder.setChannelId(NOTIFICATION_DEFAULT_CHANNEL_ID);
         builder.setSilent(true);
+        Log.d("PAUSEFORPOSITION",String.valueOf(resumePosition));
+        builder.setProgress(mediaPlayer.getDuration(), resumePosition, false);
         return builder.build();
     }
 }

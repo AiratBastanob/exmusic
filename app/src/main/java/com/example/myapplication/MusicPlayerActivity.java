@@ -186,15 +186,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
             public void onClick(View v)
             {
                 if(playerServiceBinder != null && mediaController != null){
-                    Runnable next10=new Runnable() {
-                        @Override
-                        public void run() {
-                            seek = playerServiceBinder.GetCurrentPosition() + (10 * 1000);
-                            playerServiceBinder.SetPositionPlayer(seek);
-                        }
-                    };
-                    Thread thread=new Thread(next10);
-                    thread.start();
+                    seek = playerServiceBinder.GetCurrentPosition() + (10 * 1000);
+                    playerServiceBinder.SetPositionPlayer(seek);
                 }
             }
         });
@@ -203,15 +196,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
             public void onClick(View v)
             {
                 if(playerServiceBinder != null && mediaController != null){
-                    Runnable replay10=new Runnable() {
-                        @Override
-                        public void run() {
-                            seek = playerServiceBinder.GetCurrentPosition() - (10 * 1000);
-                            playerServiceBinder.SetPositionPlayer(seek);
-                        }
-                    };
-                    Thread thread=new Thread(replay10);
-                    thread.start();
+                    seek = playerServiceBinder.GetCurrentPosition() - (10 * 1000);
+                    playerServiceBinder.SetPositionPlayer(seek);
                 }
             }
         });
