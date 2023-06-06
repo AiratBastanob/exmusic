@@ -164,6 +164,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
                     isPlaying = false;
                     mediaController.getTransportControls().skipToNext();
                     updateUI();
+                    textCurrentTime.setText(R.string.zero);
                 }
 
             }
@@ -177,6 +178,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
                     isPlaying = false;
                     mediaController.getTransportControls().skipToPrevious();
                     updateUI();
+                    textCurrentTime.setText(R.string.zero);
                 }
             }
         });

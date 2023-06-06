@@ -178,7 +178,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                     handleSkipToNext();
             }
         }
-       return START_NOT_STICKY;
+       return  super.onStartCommand(intent, flags, startId);
     }
 
     // Метод для установки ссылки на активити
@@ -196,7 +196,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     }
 
     private MediaSessionCompat.Callback mediaSessionCallback = new MediaSessionCompat.Callback() {
-        private int currentState = PlaybackStateCompat.STATE_STOPPED;
+        int currentState = PlaybackStateCompat.STATE_STOPPED;
 
         @Override
         public void onPlay() {
@@ -217,11 +217,10 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             //register after getting audio focus
             registerReceiver(becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
 
-            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING, PlaybackStateCompat.ACTION_PLAY, 1).build());
+            mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
             currentState = PlaybackStateCompat.STATE_PLAYING;
-
-            refreshNotificationAndForegroundStatus(currentState);
             Log.d("dPLAYSERVICE",String.valueOf(checkPause));
+            refreshNotificationAndForegroundStatus(currentState);
             if (checkPause)
             {
                 resumeMedia();
@@ -281,29 +280,30 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         public void onSkipToNext() {
             stopMedia();
             checkPause = false;
-
+            activity.playerSeekBar.setProgress(0);
+            activity.isPlaying=false;
+            activity.updateUI();
             track = musicRepository.getNext();
             storage.storeAudioIndex(track.getBitmapResId());
-            updateMetadataFromTrack(track);
+            prepareToPlay(track.getMusicPath());
             mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
             currentState = PlaybackStateCompat.STATE_PAUSED;
             refreshNotificationAndForegroundStatus(currentState);
-
-            prepareToPlay(track.getMusicPath());
         }
 
         @Override
         public void onSkipToPrevious() {
             stopMedia();
             checkPause = false;
+            activity.playerSeekBar.setProgress(0);
+            activity.isPlaying=false;
+            activity.updateUI();
             track = musicRepository.getPrevious();
             storage.storeAudioIndex(track.getBitmapResId());
-            updateMetadataFromTrack(track);
+            prepareToPlay(track.getMusicPath());
             mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
             currentState = PlaybackStateCompat.STATE_PAUSED;
             refreshNotificationAndForegroundStatus(currentState);
-
-            prepareToPlay(track.getMusicPath());
         }
     };
 
