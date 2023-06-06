@@ -29,6 +29,7 @@ import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.Manifest;
+import android.view.KeyEvent;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
@@ -44,13 +45,14 @@ import java.util.ArrayList;
 public class MusicService extends Service implements MediaPlayer.OnCompletionListener,
         MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener,
         MediaPlayer.OnInfoListener, MediaPlayer.OnBufferingUpdateListener {//MediaPlayer.OnPreparedListener,
-
-    public static final String ACTION_PLAY = "com.example.myapplication.ACTION_PLAY";
-    public static final String ACTION_PAUSE = "com.example.myapplication.ACTION_PAUSE";
-    public static final String ACTION_PREVIOUS = "com.example.myapplication.ACTION_PREVIOUS";
-    public static final String ACTION_NEXT = "com.example.myapplication.ACTION_NEXT";
-    public static final String ACTION_STOP = "com.example.myapplication.ACTION_STOP";
-
+    private final PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder().setActions(
+            PlaybackStateCompat.ACTION_PLAY
+                    | PlaybackStateCompat.ACTION_STOP
+                    | PlaybackStateCompat.ACTION_PAUSE
+                    | PlaybackStateCompat.ACTION_PLAY_PAUSE
+                    | PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                    | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+    );
     private ArrayList<MusicRepository.Song> songs;
     private MusicRepository.Song song;
 
@@ -91,15 +93,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private int currentStateCopy;
     public static final String ACTION_TOGGLE_PLAYBACK = "com.example.musicplayer.ACTION_TOGGLE_PLAYBACK";
     private final MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
-
-    private final PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder().setActions(
-            PlaybackStateCompat.ACTION_PLAY
-                    | PlaybackStateCompat.ACTION_STOP
-                    | PlaybackStateCompat.ACTION_PAUSE
-                    | PlaybackStateCompat.ACTION_PLAY_PAUSE
-                    | PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-                    | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-    );
     private final int NOTIFICATION_ID = 116;
     private final String NOTIFICATION_DEFAULT_CHANNEL_ID = "VKaif_Channel";
     private final MusicRepository musicRepository = new MusicRepository();
@@ -146,7 +139,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     public void onCreate() {
         super.onCreate();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            @SuppressLint("WrongConstant") NotificationChannel notificationChannel = new NotificationChannel(NOTIFICATION_DEFAULT_CHANNEL_ID, getString(R.string.notification_channel_name), NotificationManagerCompat.IMPORTANCE_DEFAULT);
+            NotificationChannel notificationChannel = new NotificationChannel(NOTIFICATION_DEFAULT_CHANNEL_ID, getString(R.string.notification_channel_name), NotificationManager.IMPORTANCE_DEFAULT);
             NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             notificationManager.createNotificationChannel(notificationChannel);
 
@@ -181,8 +174,22 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        MediaButtonReceiver.handleIntent(mediaSession, intent);
-        return super.onStartCommand(intent, flags, startId);
+        if (intent != null&& intent.getAction() != null) {
+            Log.d("MusicService", "Intent: " + intent.toString());
+            Log.d("MusicService", "Action: " + intent.getAction());
+            long action = Long.parseLong(intent.getAction());
+            switch ((int) action) {
+                case (int)PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS:
+                    handleSkipToPrevious();
+                    break;
+                case (int)PlaybackStateCompat.ACTION_PLAY_PAUSE:
+                    handlePlayPause();
+                    break;
+                case (int)PlaybackStateCompat.ACTION_SKIP_TO_NEXT:
+                    handleSkipToNext();
+            }
+        }
+       return START_NOT_STICKY;
     }
 
     // Метод для установки ссылки на активити
@@ -347,13 +354,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         mediaSession.setMetadata(metadataBuilder.build());
     }
 
-    protected Boolean GetisRepeat() {
-        if (mediaPlayer.isLooping()) {
-            return true;
-        }
-        return false;
-    }
-
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
         public void onAudioFocusChange(int focusChange) {
@@ -372,11 +372,15 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                         musicRepository.setIdUserMusic(IdMusic);
                         track = musicRepository.getCurrent();
                         prepareToPlay(track.getMusicPath());
-                    } else if (!mediaPlayer.isPlaying() && activity != null) {
-                        duration = mediaPlayer.getDuration();
-                        StringDuration = musicRepository.ConvertingTime(duration);
-                        activity.updateTextView(StringDuration, duration);
-                        playMedia();
+                    }
+                    else if(mediaPlayer != null&&activity.isPlaying)
+                    {
+                        if (!mediaPlayer.isPlaying() && activity != null) {
+                            duration = mediaPlayer.getDuration();
+                            StringDuration = musicRepository.ConvertingTime(duration);
+                            activity.updateTextView(StringDuration, duration);
+                            playMedia();
+                        }
                     }
                     mediaPlayer.setVolume(1.0f, 1.0f);
                     break;
@@ -413,6 +417,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
                 mediaSessionCallback.onPause();
             }
+            //registerReceiver(broadcastReceiver, new IntentFilter("Music_MS"));
         }
     };
 
@@ -569,38 +574,96 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     @SuppressLint("MissingPermission")
     private void refreshNotificationAndForegroundStatus(int playbackState) {
         Notification notification = getNotification(playbackState);
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+                switch (playbackState) {
+                    case PlaybackStateCompat.STATE_PLAYING: {
+                        startForeground(NOTIFICATION_ID, notification);
+                        break;
+                    }
+                    case PlaybackStateCompat.STATE_PAUSED: {
+                        NotificationManagerCompat.from(MusicService.this).notify(NOTIFICATION_ID, notification);
+                        stopForeground(false);
+                        break;
+                    }
+                    default: {
+                        stopForeground(true);
+                        break;
+                    }
+                }
+            }
+            else {
+                switch (playbackState) {
+                    case PlaybackStateCompat.STATE_PLAYING: {
+                        startForeground(NOTIFICATION_ID, notification);
+                        break;
+                    }
+                    case PlaybackStateCompat.STATE_PAUSED: {
+                        NotificationManagerCompat.from(MusicService.this).notify(NOTIFICATION_ID, notification);
+                        stopForeground(false);
+                        break;
+                    }
+                    default: {
+                        stopForeground(true);
+                        break;
+                    }
+                }
+            }
+    }
+    // Метод обработчика кнопки "Previous"
+    private void handleSkipToPrevious() {
+        // Реализация логики для перехода к предыдущему треку
+        mediaSessionCallback.onSkipToPrevious();
+    }
 
-        switch (playbackState) {
-            case PlaybackStateCompat.STATE_PLAYING: {
-                startForeground(NOTIFICATION_ID, notification);
-                break;
-            }
-            case PlaybackStateCompat.STATE_PAUSED: {
-            /*    if (storage.loadCheckNotif() == 1) {
-
-                }*/
-                NotificationManagerCompat.from(MusicService.this).notify(NOTIFICATION_ID, notification);
-                stopForeground(false);
-                break;
-            }
-            default: {
-                stopForeground(true);
-                break;
-            }
+    // Метод обработчика кнопки "Play/Pause"
+    private void handlePlayPause() {
+        Log.d("DASDAS","NORIFPLAY");
+        if (mediaPlayer.isPlaying()) {
+            // Реализация логики для паузы воспроизведения
+            mediaSessionCallback.onPause();
+        } else {
+            // Реализация логики для возобновления воспроизведения
+            mediaSessionCallback.onPlay();
         }
     }
 
+    // Метод обработчика кнопки "Next"
+    private void handleSkipToNext() {
+        // Реализация логики для перехода к следующему треку
+        mediaSessionCallback.onSkipToNext();
+    }
 
     private Notification getNotification(int playbackState) {
         NotificationCompat.Builder builder = MediaNotificationManager.from(this, mediaSession);
-        builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_previous, getString(R.string.previous), MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)));
+        // Добавление обработчиков кнопок только для Android 10 и ниже
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+           Intent previousIntent = new Intent(this, MusicService.class);
+            previousIntent.setAction(String.valueOf(PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS));
+            PendingIntent previousPendingIntent = PendingIntent.getService(this, 0, previousIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.addAction(android.R.drawable.ic_media_previous, getString(R.string.previous), previousPendingIntent);
 
-        if (playbackState == PlaybackStateCompat.STATE_PLAYING)
-            builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_pause, getString(R.string.pause), MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)));
-        else
-            builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_play, getString(R.string.play), MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)));
+            Intent playPauseIntent = new Intent(this, MusicService.class);
+            playPauseIntent.setAction(String.valueOf(PlaybackStateCompat.ACTION_PLAY_PAUSE));
+            PendingIntent playPausePendingIntent = PendingIntent.getService(this, 0, playPauseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            if (playbackState == PlaybackStateCompat.STATE_PLAYING) {
+                builder.addAction(android.R.drawable.ic_media_pause, getString(R.string.pause), playPausePendingIntent);
+            } else {
+                builder.addAction(android.R.drawable.ic_media_play, getString(R.string.play), playPausePendingIntent);
+            }
 
-        builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_next, getString(R.string.next), MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT)));
+            Intent nextIntent = new Intent(this, MusicService.class);
+            nextIntent.setAction(String.valueOf(PlaybackStateCompat.ACTION_SKIP_TO_NEXT));
+            PendingIntent nextPendingIntent = PendingIntent.getService(this, 0, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.addAction(android.R.drawable.ic_media_next, getString(R.string.next), nextPendingIntent);
+        }
+        else {
+            builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_previous, getString(R.string.previous), MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)));
+            if (playbackState == PlaybackStateCompat.STATE_PLAYING)
+                builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_pause, getString(R.string.pause), MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)));
+            else
+                builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_play, getString(R.string.play), MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)));
+            builder.addAction(new NotificationCompat.Action(android.R.drawable.ic_media_next, getString(R.string.next), MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT)));
+        }
         builder.setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                 .setShowActionsInCompactView(1)
                 .setShowCancelButton(true)
@@ -610,9 +673,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         builder.setColor(ContextCompat.getColor(this, R.color.colorPrimaryDark)); // The whole background (in MediaStyle), not just icon background
         builder.setShowWhen(false);
         builder.setPriority(NotificationCompat.PRIORITY_HIGH);
-        builder.setOnlyAlertOnce(true);
         builder.setChannelId(NOTIFICATION_DEFAULT_CHANNEL_ID);
-        //builder.setProgress(mediaPlayer.getDuration(),mediaPlayer.getCurrentPosition(),false);
+        builder.setSilent(true);
         return builder.build();
     }
 }
