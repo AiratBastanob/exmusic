@@ -31,6 +31,10 @@ public class MusicRepository {
         return getCurrent();
     }
 
+    public int getCurrentItemIndex() {
+        return this.currentItemIndex;
+    }
+
     Song getCurrent() {
         return data[currentItemIndex];
     }
@@ -70,9 +74,9 @@ public class MusicRepository {
         public Song(String title, String artist, int bitmapResId, String MusicPath, Long duration) {
             this.title = title;
             this.artist = artist;
+            this.bitmapResId = bitmapResId;
             this.MusicPath = MusicPath;
             this.duration=duration;
-            this.bitmapResId = bitmapResId;
         }
 
         public Song(String title, String artist, int bitmapResId, String MusicPath, Long duration, String album) {

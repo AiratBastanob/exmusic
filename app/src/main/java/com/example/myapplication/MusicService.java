@@ -20,6 +20,7 @@ import android.media.MediaPlayer;
 import android.media.session.MediaSessionManager;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
@@ -30,6 +31,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.Manifest;
 import android.view.KeyEvent;
+import android.widget.RemoteViews;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
@@ -55,6 +57,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     );
     // Binder для связи с активити
     private IBinder binder = new PlayerServiceBinder();
+    Handler mHandler = new Handler();
     // Ссылка на активити
     private MusicPlayerActivity activity;
 
@@ -67,7 +70,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private MediaControllerCompat.TransportControls transportControls;
 
     //Used to pause/resume MediaPlayer
-    private int resumePosition;
+    public static int resumePosition;
 
     //Handle incoming phone calls
     private boolean ongoingCall = false;
@@ -80,7 +83,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private MediaPlayer mediaPlayer = new MediaPlayer();
     private AudioFocusRequest audioFocusRequest;
     private boolean audioFocusRequested = false, isShuffle, isRepeat;
-    private int duration,currentStateCopy;
+    public static int duration;
+    public int currentStateCopy;
     private String StringDuration,TAG = "d",currentUri;
     private MusicRepository.Song track;
     private final MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder();
@@ -88,6 +92,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private final String NOTIFICATION_DEFAULT_CHANNEL_ID = "VKaif_Channel";
     private final MusicRepository musicRepository = new MusicRepository();
     private boolean checkPause = false;
+    RemoteViews contentView;
 
     @Override
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
@@ -143,7 +148,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                     .setAudioAttributes(audioAttributes)
                     .build();
         }
-
+        contentView = new RemoteViews(getPackageName(), R.layout.activity_main);
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         mediaSession = new MediaSessionCompat(this, "PlayerService");
@@ -164,8 +169,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null&& intent.getAction() != null) {
-            Log.d("MusicService", "Intent: " + intent.toString());
-            Log.d("MusicService", "Action: " + intent.getAction());
             long action = Long.parseLong(intent.getAction());
             switch ((int) action) {
                 case (int)PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS:
@@ -284,7 +287,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             activity.isPlaying=false;
             activity.updateUI();
             track = musicRepository.getNext();
-            storage.storeAudioIndex(track.getBitmapResId());
+            storage.storeAudioIndex(musicRepository.getCurrentItemIndex());
             prepareToPlay(track.getMusicPath());
             mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
             currentState = PlaybackStateCompat.STATE_PAUSED;
@@ -299,7 +302,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             activity.isPlaying=false;
             activity.updateUI();
             track = musicRepository.getPrevious();
-            storage.storeAudioIndex(track.getBitmapResId());
+            storage.storeAudioIndex(musicRepository.getCurrentItemIndex());
             prepareToPlay(track.getMusicPath());
             mediaSession.setPlaybackState(stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
             currentState = PlaybackStateCompat.STATE_PAUSED;
@@ -338,7 +341,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, track.getTitle());
         metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track.getArtist());
         metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track.getArtist());
-        metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
+        //metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
         metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mediaPlayer.getDuration());
         mediaSession.setMetadata(metadataBuilder.build());
     }
@@ -419,7 +422,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     }
 
     @Override
-    public void onCompletion(MediaPlayer mediaPlayer) {       ;
+    public void onCompletion(MediaPlayer mediaPlayer) {
         isShuffle = storage.loadAudio("Shuffle");
         isRepeat = storage.loadAudio("Repeat");
         checkPause = false;
@@ -565,11 +568,13 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 switch (playbackState) {
                     case PlaybackStateCompat.STATE_PLAYING: {
                         startForeground(NOTIFICATION_ID, notification);
+                        runnable.run();
                         break;
                     }
                     case PlaybackStateCompat.STATE_PAUSED: {
                         NotificationManagerCompat.from(MusicService.this).notify(NOTIFICATION_ID, notification);
-                        stopForeground(false);
+                        runnable.run();
+                        //stopForeground(false);
                         break;
                     }
                     default: {
@@ -596,6 +601,24 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 }
             }
     }
+    Runnable runnable=new Runnable() {
+        @Override
+        public void run() {
+            new Thread(new Runnable() {
+                public void run() {
+                    while (mediaPlayer.getCurrentPosition() < mediaPlayer.getDuration()) {
+
+                        // Update the progress bar
+                        mHandler.post(new Runnable() {
+                            public void run() {
+                                contentView.setProgressBar(R.id.seek_bar, mediaPlayer.getDuration(), mediaPlayer.getCurrentPosition() , false);
+                            }
+                        });
+                    }
+                }
+            }).start();
+        }
+    };
     // Метод обработчика кнопки "Previous"
     private void handleSkipToPrevious() {
         // Реализация логики для перехода к предыдущему треку
@@ -657,11 +680,15 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         builder.setSmallIcon(R.mipmap.ic_launcher);
         builder.setColor(ContextCompat.getColor(this, R.color.colorPrimaryDark)); // The whole background (in MediaStyle), not just icon background
         builder.setShowWhen(false);
+        builder.setWhen(0);
+        /*builder.setProgress(mediaPlayer.getDuration(), mediaPlayer.getCurrentPosition(), false);*/
+        contentView.setProgressBar( R.id.seek_bar,mediaPlayer.getDuration(), resumePosition, false);
+        builder.setCustomContentView(contentView);
         builder.setPriority(NotificationCompat.PRIORITY_HIGH);
         builder.setChannelId(NOTIFICATION_DEFAULT_CHANNEL_ID);
         builder.setSilent(true);
-        Log.d("PAUSEFORPOSITION",String.valueOf(resumePosition));
-        builder.setProgress(mediaPlayer.getDuration(), resumePosition, false);
+       /* Log.d("PAUSEFORPOSITION",String.valueOf(resumePosition));
+        Log.d("PAUSEFORDURATION",String.valueOf(mediaPlayer.getDuration()));*/
         return builder.build();
     }
 }
